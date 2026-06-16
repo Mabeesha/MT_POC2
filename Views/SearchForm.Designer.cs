@@ -72,7 +72,11 @@ partial class SearchForm
 
         // ===== Header =====
         panelHeader.Dock = DockStyle.Top;
-        panelHeader.Height = 60;
+        // Width must be set explicitly (matching ClientSize.Width) before any
+        // Anchor-right children below are positioned: Dock only stretches the
+        // panel to the form's width once a layout pass runs, which is too late
+        // for the Anchor distance-to-right-edge to be captured correctly.
+        panelHeader.Size = new Size(1000, 60);
         panelHeader.BackColor = ColorTranslator.FromHtml("#1B2A4A");
         panelHeader.Controls.Add(lblHeaderTitle);
         panelHeader.Controls.Add(lblUser);
@@ -108,7 +112,8 @@ partial class SearchForm
 
         // ===== Filters =====
         panelFilters.Dock = DockStyle.Top;
-        panelFilters.Height = 160;
+        // Same Anchor-capture timing issue as panelHeader above.
+        panelFilters.Size = new Size(1000, 160);
         panelFilters.BackColor = Color.White;
         panelFilters.Controls.Add(lblFiltersTitle);
         panelFilters.Controls.Add(lblName);
