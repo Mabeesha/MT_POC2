@@ -8,8 +8,8 @@
 4. [Application Entry Point](#4-application-entry-point)
 5. [Database Layer](#5-database-layer)
 6. [Data Model](#6-data-model)
-7. [Login Page](#7-login-page)
-8. [Search Page](#8-search-page)
+7. [Login Form](#7-login-form)
+8. [Search Form](#8-search-form)
 9. [End-to-End Application Flow](#9-end-to-end-application-flow)
 10. [Security Design](#10-security-design)
 
@@ -17,12 +17,14 @@
 
 ## 1. Overview
 
-Employee Search is a Windows desktop application built with **WPF (Windows Presentation Foundation)** on **.NET 8**. It provides two screens:
+Employee Search is a Windows desktop application built with **Windows Forms (WinForms)** on **.NET 8**. It provides two screens:
 
-- A **login page** that authenticates users against a local database using hashed passwords.
-- A **search page** where the authenticated user can filter and browse employee records using a combination of text input and dropdown filters.
+- A **login form** that authenticates users against a local database using hashed passwords.
+- A **search form** where the authenticated user can filter and browse employee records using a combination of text input and dropdown filters.
 
 The database is **SQLite**, an embedded file-based relational database. No server installation or network configuration is required — the database file (`employeesearch.db`) is created automatically the first time the app runs, alongside the executable.
+
+Unlike WPF, WinForms has no markup language (XAML) — every control is created and configured directly in C#. This codebase follows the same `Form` / `Form.Designer.cs` split that Visual Studio's WinForms designer generates: the `.Designer.cs` file declares and configures controls (`InitializeComponent()`), and the main `.cs` file holds the event-handling logic. These files were hand-written here (no visual designer was available in this environment), but they follow exactly the same convention so the project opens and behaves normally in Visual Studio.
 
 ---
 
@@ -30,22 +32,20 @@ The database is **SQLite**, an embedded file-based relational database. No serve
 
 ```
 MT_POC2/
-├── EmployeeSearch.csproj       # Project definition: SDK, target framework, NuGet packages
-├── App.xaml                    # WPF application root: declares the startup window
-├── App.xaml.cs                 # Application startup code: initialises the database
-├── AssemblyInfo.cs             # Auto-generated assembly metadata
+├── EmployeeSearch.csproj            # Project definition: SDK, target framework, NuGet packages
+├── Program.cs                       # Application entry point: Main(), login/search loop
 │
 ├── Database/
-│   └── DatabaseHelper.cs       # All database operations: init, login, search
+│   └── DatabaseHelper.cs            # All database operations: init, login, search
 │
 ├── Models/
-│   └── Employee.cs             # C# class that represents one row from the Employees table
+│   └── Employee.cs                  # C# class that represents one row from the Employees table
 │
 └── Views/
-    ├── LoginWindow.xaml        # Login screen UI layout
-    ├── LoginWindow.xaml.cs     # Login screen logic
-    ├── SearchWindow.xaml       # Search screen UI layout
-    └── SearchWindow.xaml.cs    # Search screen logic
+    ├── LoginForm.cs                 # Login screen logic
+    ├── LoginForm.Designer.cs        # Login screen control declarations/layout
+    ├── SearchForm.cs                # Search screen logic
+    └── SearchForm.Designer.cs       # Search screen control declarations/layout
 ```
 
 ---
@@ -54,7 +54,7 @@ MT_POC2/
 
 | Component | Technology | Version | Purpose |
 |---|---|---|---|
-| App framework | WPF (.NET) | .NET 8 | Windows desktop UI |
+| App framework | Windows Forms (.NET) | .NET 8 | Windows desktop UI |
 | Database | SQLite | via NuGet | Embedded relational database |
 | SQLite driver | Microsoft.Data.Sqlite | 8.0.0 | ADO.NET provider for SQLite |
 | Password hashing | BCrypt.Net-Next | 4.0.3 | Secure one-way password hashing |
@@ -68,7 +68,7 @@ MT_POC2/
     <TargetFramework>net8.0-windows</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <UseWPF>true</UseWPF>
+    <UseWindowsForms>true</UseWindowsForms>
   </PropertyGroup>
 
   <ItemGroup>
@@ -81,50 +81,72 @@ MT_POC2/
 Key settings explained:
 
 - **`OutputType = WinExe`** — Builds a Windows GUI executable (no console window).
-- **`TargetFramework = net8.0-windows`** — Targets .NET 8 with Windows-specific APIs enabled. The `-windows` suffix is required for WPF.
+- **`TargetFramework = net8.0-windows`** — Targets .NET 8 with Windows-specific APIs enabled. The `-windows` suffix is required for WinForms (and WPF).
 - **`Nullable = enable`** — The C# nullable reference types feature is turned on. This means the compiler warns you if you use a potentially-null variable without checking it first.
 - **`ImplicitUsings = enable`** — Common namespaces like `System`, `System.Collections.Generic`, and `System.Linq` are auto-imported into every file, so you don't need to write `using System;` at the top of everything.
-- **`UseWPF = true`** — Tells the SDK to include the WPF framework and enable `.xaml` file compilation.
+- **`UseWindowsForms = true`** — Tells the SDK to include the WinForms framework (`System.Windows.Forms`, `System.Drawing`) and reference the Windows Desktop runtime.
 
 ---
 
 ## 4. Application Entry Point
 
-### App.xaml
-
-```xml
-<Application x:Class="EmployeeSearch.App"
-             xmlns="..."
-             xmlns:x="..."
-             StartupUri="Views/LoginWindow.xaml">
-```
-
-`App.xaml` is the root of every WPF application. The most important attribute here is `StartupUri`, which tells WPF which window to open when the application launches. Here it points to `LoginWindow.xaml`, making the login screen the first thing the user sees.
-
-`x:Class="EmployeeSearch.App"` links this XAML file to its code-behind class, `App.xaml.cs`.
-
-### App.xaml.cs
+**File:** `Program.cs`
 
 ```csharp
-public partial class App : Application
+internal static class Program
 {
-    protected override void OnStartup(StartupEventArgs e)
+    [STAThread]
+    private static void Main()
     {
-        base.OnStartup(e);
+        Application.SetHighDpiMode(HighDpiMode.SystemAware);
+        Application.EnableVisualStyles();
+        Application.SetCompatibleTextRenderingDefault(false);
+
         DatabaseHelper.Initialize();
+
+        while (true)
+        {
+            string? username;
+            using (var loginForm = new LoginForm())
+            {
+                if (loginForm.ShowDialog() != DialogResult.OK)
+                    break;
+
+                username = loginForm.Username;
+            }
+
+            using var searchForm = new SearchForm(username!);
+            Application.Run(searchForm);
+
+            if (!searchForm.LoggedOut)
+                break;
+        }
     }
 }
 ```
 
-`App` inherits from WPF's built-in `Application` class. By overriding `OnStartup`, we get a guaranteed hook that runs before any window is shown. This is the ideal place to perform one-time setup.
+WinForms has no XAML startup URI — `Main()` is the literal entry point, just like a console app. `[STAThread]` marks the thread as Single-Threaded Apartment, which Windows requires for UI components (COM-based controls like `DataGridView` and clipboard/drag-drop interop depend on it).
 
-`DatabaseHelper.Initialize()` is called here to ensure the SQLite database file exists and the tables are created before the login window opens and tries to read from the database. If the app is run for the first time, this call creates the database from scratch and seeds it with data. On subsequent runs, it detects the tables already exist and does nothing.
+`Application.EnableVisualStyles()` turns on the modern (themed) rendering of standard controls (buttons, scrollbars, etc.) instead of the classic Windows 98-style look. `SetCompatibleTextRenderingDefault(false)` selects GDI+ text rendering, the recommended default for new applications.
+
+`DatabaseHelper.Initialize()` is called once, before any form is shown, to guarantee the SQLite database file and tables exist before the login form tries to query it.
+
+**The login/search loop.** This is the most important architectural difference from a typical single-window app. `Application.Run(form)` does not just show a window — it starts the Windows message loop and **does not return until that specific form closes**. If `SearchForm` were passed directly to `Application.Run()` as the app's only top-level form, closing it (e.g., via Logout) would end the entire application, with no way to cycle back to the login screen.
+
+The fix used here is a `while (true)` loop with two different display mechanisms:
+
+1. **`LoginForm` is shown modally** with `loginForm.ShowDialog()`. This blocks the calling code (not the whole app) until the login form closes, and returns a `DialogResult` indicating how it closed. If the result isn't `DialogResult.OK` (i.e., the user closed the window without logging in), the loop `break`s and the app exits.
+2. **`SearchForm` is run as the "main" form** via `Application.Run(searchForm)`. When the user logs out, `SearchForm` sets `LoggedOut = true` and calls `Close()`. This ends `Application.Run()`, control returns to the `while` loop, and — because `LoggedOut` is `true` — the loop iterates again, showing `LoginForm` once more. If the user instead closes `SearchForm` directly (e.g., the window's `X` button) without logging out, `LoggedOut` stays `false` and the loop `break`s, exiting the app.
+
+Each `using` block disposes the form (releasing its window handle and GDI resources) as soon as it's no longer needed, which is important since the loop can create many `LoginForm`/`SearchForm` instances over a long-running session (one login/logout cycle = one of each).
 
 ---
 
 ## 5. Database Layer
 
 **File:** `Database/DatabaseHelper.cs`
+
+This file is unchanged from the original WPF version — it has no dependency on any UI framework, so it carried over to WinForms verbatim.
 
 `DatabaseHelper` is a `static` class — it has no instance and all its methods are called directly, like `DatabaseHelper.Initialize()`. It is responsible for every interaction with the SQLite database.
 
@@ -331,118 +353,90 @@ public class Employee
 }
 ```
 
-`Employee` is a plain C# class (a POCO — Plain Old CLR Object). Its properties map one-to-one to the columns in the `Employees` database table.
+`Employee` is a plain C# class (a POCO — Plain Old CLR Object). Its properties map one-to-one to the columns in the `Employees` database table. This class also carried over unchanged from the WPF version.
 
 `= ""` on the string properties are **default value initialisers**. Because `Nullable = enable` is set in the project, the compiler would warn that a string property might be `null` unless we either mark it nullable (`string?`) or give it a non-null default. The `= ""` is the cleaner choice here, since these fields always have database values.
 
 `SalaryFormatted` is a **computed property** (read-only, no setter). It has no backing field; it calculates its value on demand by formatting the `Salary` double using the `"C0"` format specifier, which produces a locale-aware currency string with no decimal places (e.g., `$85,000` on a US system).
 
-This property is used directly in the DataGrid XAML binding `{Binding SalaryFormatted}`, keeping the formatting logic in the model rather than in the UI.
+In WinForms, this property is mapped to a `DataGridView` column via `DataPropertyName = "SalaryFormatted"` (see [Search Form](#8-search-form)), keeping the formatting logic in the model rather than in the UI — the same separation of concerns the WPF version used with its `{Binding SalaryFormatted}` XAML expression.
 
 ---
 
-## 7. Login Page
+## 7. Login Form
 
-### LoginWindow.xaml — UI Layout
+**Files:** `Views/LoginForm.cs`, `Views/LoginForm.Designer.cs`
 
-The login window is a fixed-size, non-resizable window (420×520 pixels) centred on screen. It has two layers of visual structure.
+WinForms has no XAML — every visual element is constructed in code inside `InitializeComponent()`, in `LoginForm.Designer.cs`. This file is meant to be regenerated by Visual Studio's designer when you drag controls onto the form; here it's written by hand but follows the same conventions (field per control, all set up in one method, called once from the constructor).
 
-**Background gradient:**
-```xml
-<Window.Background>
-    <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
-        <GradientStop Color="#1B2A4A" Offset="0"/>  <!-- dark navy top-left -->
-        <GradientStop Color="#2B5278" Offset="1"/>  <!-- lighter blue bottom-right -->
-    </LinearGradientBrush>
-</Window.Background>
-```
-
-`StartPoint="0,0"` is the top-left corner and `EndPoint="1,1"` is the bottom-right corner, creating a diagonal gradient. `Offset` values are fractions from 0.0 to 1.0 defining where along the gradient axis each colour lives.
-
-**Card panel:**
-```xml
-<Border Background="White" CornerRadius="14" Width="340"
-        VerticalAlignment="Center" Padding="36,32">
-    <Border.Effect>
-        <DropShadowEffect BlurRadius="30" ShadowDepth="8" Opacity="0.25"/>
-    </Border.Effect>
-    <StackPanel> ... </StackPanel>
-</Border>
-```
-
-`Border` is WPF's general-purpose container that can have a background, rounded corners, and visual effects. `CornerRadius="14"` rounds all four corners. `VerticalAlignment="Center"` positions the card in the vertical centre of the window (which works because the parent `Grid` stretches to fill the window). The `DropShadowEffect` is a built-in WPF bitmap effect that renders a soft shadow behind the border, creating the elevated card appearance.
-
-**Input fields:**
-
-Native WPF `TextBox` and `PasswordBox` controls do not support `CornerRadius`. To work around this, each input is wrapped in a styled `Border` that provides the rounded corners and border colour, while the inner control itself has its own border set to zero thickness:
-
-```xml
-<Border BorderBrush="#D1D5DB" BorderThickness="1" CornerRadius="6" Background="#F9FAFB">
-    <TextBox x:Name="UsernameBox" BorderThickness="0" Background="Transparent" .../>
-</Border>
-```
-
-**Login button with custom template:**
-
-WPF's default button has a platform-styled chrome that ignores `CornerRadius`. To make a rounded button, the entire visual template is replaced:
-
-```xml
-<Button.Style>
-    <Style TargetType="Button">
-        <Setter Property="Background" Value="#1B4F8A"/>
-        <Setter Property="Template">
-            <Setter.Value>
-                <ControlTemplate TargetType="Button">
-                    <Border Background="{TemplateBinding Background}" CornerRadius="7">
-                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                    </Border>
-                    <ControlTemplate.Triggers>
-                        <Trigger Property="IsMouseOver" Value="True">
-                            <Setter Property="Background" Value="#154080"/>
-                        </Trigger>
-                        <Trigger Property="IsPressed" Value="True">
-                            <Setter Property="Background" Value="#0F3060"/>
-                        </Trigger>
-                    </ControlTemplate.Triggers>
-                </ControlTemplate>
-            </Setter.Value>
-        </Setter>
-    </Style>
-</Button.Style>
-```
-
-`{TemplateBinding Background}` is a special binding used inside control templates that reads the `Background` property from the button itself (set by the outer `<Setter>`). `ContentPresenter` is the placeholder that renders whatever is in the button's `Content` property (the text "Sign In"). The `ControlTemplate.Triggers` change the background colour when the mouse hovers or the button is pressed, providing visual feedback.
-
-**Error border:**
-```xml
-<Border x:Name="ErrorBorder" Background="#FEF2F2" CornerRadius="6"
-        Visibility="Collapsed">
-    <TextBlock x:Name="ErrorText" Foreground="#DC2626" .../>
-</Border>
-```
-
-`Visibility="Collapsed"` means the element takes up no space and is invisible by default. When an error occurs, the code-behind sets `ErrorBorder.Visibility = Visibility.Visible` to reveal the red error panel.
-
-### LoginWindow.xaml.cs — Login Logic
+### Window setup
 
 ```csharp
-public LoginWindow()
+ClientSize = new Size(420, 520);
+FormBorderStyle = FormBorderStyle.FixedDialog;
+MaximizeBox = false;
+MinimizeBox = false;
+StartPosition = FormStartPosition.CenterScreen;
+Text = "Employee Search — Login";
+```
+
+`FormBorderStyle.FixedDialog` produces a non-resizable window with a dialog-style border (no maximize affordance even before `MaximizeBox` is set). `StartPosition.CenterScreen` centers the window on the primary monitor when it first appears — the WinForms equivalent of WPF's `WindowStartupLocation="CenterScreen"`.
+
+### Background gradient
+
+WinForms has no `LinearGradientBrush` markup; the equivalent visual effect is done by overriding a paint method in `LoginForm.cs`:
+
+```csharp
+protected override void OnPaintBackground(PaintEventArgs e)
 {
-    InitializeComponent();
-    UsernameBox.Focus();
+    using var brush = new LinearGradientBrush(
+        ClientRectangle,
+        ColorTranslator.FromHtml("#1B2A4A"),
+        ColorTranslator.FromHtml("#2B5278"),
+        45f);
+    e.Graphics.FillRectangle(brush, ClientRectangle);
 }
 ```
 
-`InitializeComponent()` is generated automatically by the XAML compiler. It parses the `.xaml` file and creates all the UI objects, wires up event handlers, and makes named controls (like `UsernameBox`) available as fields. It must be the first call in the constructor.
+`OnPaintBackground` is called by WinForms before the normal `OnPaint`, specifically to draw the form's background. `LinearGradientBrush` (from `System.Drawing.Drawing2D`, GDI+) takes a rectangle, two colors, and an angle (`45f` degrees) and produces a smooth diagonal gradient — the direct GDI+ analog of WPF's XAML `<LinearGradientBrush>`. `ColorTranslator.FromHtml("#1B2A4A")` converts a CSS-style hex string into a `System.Drawing.Color`, so the same color values from the original WPF design could be reused as-is.
 
-`UsernameBox.Focus()` immediately places the keyboard cursor in the username field so the user can start typing without having to click first.
+### The card panel
 
-**AttemptLogin:**
+Unlike WPF's `Border` with `CornerRadius`, WinForms' `Panel` control has no built-in rounded corners or drop shadow — those are XAML/visual-effect features without a direct WinForms equivalent. The card here is a plain white `Panel` with square corners:
+
+```csharp
+panelCard.BackColor = Color.White;
+panelCard.Location = new Point(40, 50);
+panelCard.Size = new Size(340, 410);
+```
+
+All other controls (icon label, title, subtitle, username/password fields, error label, sign-in button, hint label) are added as children of `panelCard` via `panelCard.Controls.Add(...)`, each manually positioned with a `Location` and `Size` (WinForms has no automatic flow layout unless you opt into a `FlowLayoutPanel` or `TableLayoutPanel`; this form uses fixed coordinates since its size never changes).
+
+### Login logic
+
+**File:** `Views/LoginForm.cs`
+
+```csharp
+public partial class LoginForm : Form
+{
+    public string? Username { get; private set; }
+
+    public LoginForm()
+    {
+        InitializeComponent();
+        txtUsername.Focus();
+    }
+```
+
+`InitializeComponent()` must be the first call in the constructor — it builds every control declared in the `.Designer.cs` partial class. `txtUsername.Focus()` then places the keyboard cursor in the username field.
+
+`Username` is a public, externally-readable property that `Program.cs` reads after the dialog closes successfully — this is how the chosen username is passed out of the modal form without any other coupling between `Program.cs` and `LoginForm`.
+
 ```csharp
 private void AttemptLogin()
 {
-    var username = UsernameBox.Text.Trim();
-    var password = PasswordBox.Password;
+    var username = txtUsername.Text.Trim();
+    var password = txtPassword.Text;
 
     if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(password))
     {
@@ -453,215 +447,214 @@ private void AttemptLogin()
     if (!DatabaseHelper.ValidateLogin(username, password))
     {
         ShowError("Invalid username or password. Please try again.");
-        PasswordBox.Clear();
-        PasswordBox.Focus();
+        txtPassword.Clear();
+        txtPassword.Focus();
         return;
     }
 
-    var searchWindow = new SearchWindow(username);
-    searchWindow.Show();
+    Username = username;
+    DialogResult = DialogResult.OK;
     Close();
 }
 ```
 
-Note that `PasswordBox` exposes its content through the `.Password` property (not `.Text`). WPF deliberately keeps passwords in a separate, non-bindable property for security — it holds the value in a `SecureString` internally and does not allow data binding to it, reducing the risk of the password being copied into memory by the data binding engine.
+WinForms has no separate `PasswordBox` type — a regular `TextBox` is used with `UseSystemPasswordChar = true` (set in the Designer file), which masks the displayed characters while still exposing the real text through `.Text`, unlike WPF's `PasswordBox.Password` property which is intentionally non-bindable.
 
-`.Trim()` on the username removes accidental leading/trailing spaces (a common source of failed logins).
+On success, setting `DialogResult = DialogResult.OK` is what makes `loginForm.ShowDialog()` in `Program.cs` return `DialogResult.OK` — this is the standard WinForms pattern for a modal form to report its outcome to its caller, replacing the WPF version's direct `new SearchWindow(username).Show()` call. `Close()` then ends the modal loop.
 
-On success: the `SearchWindow` is instantiated with the username as a parameter (so the search page can display "Logged in as: admin"), shown with `.Show()`, and then the login window closes itself with `Close()`.
-
-**Event routing:**
 ```csharp
-private void LoginButton_Click(object sender, RoutedEventArgs e) => AttemptLogin();
-
-private void Input_KeyDown(object sender, KeyEventArgs e)
+private void Input_KeyDown(object? sender, KeyEventArgs e)
 {
-    if (e.Key == Key.Enter) AttemptLogin();
+    if (e.KeyCode == Keys.Enter)
+    {
+        e.SuppressKeyPress = true;
+        AttemptLogin();
+    }
 }
 ```
 
-Both the button click and pressing Enter in either input field call the same `AttemptLogin()` method. This is standard UX practice — users expect Enter to submit a form.
+Both `txtUsername` and `txtPassword` subscribe to this same `KeyDown` handler (wired up in the Designer file), so pressing Enter in either field submits the form — the same UX as the WPF version. `e.SuppressKeyPress = true` prevents the Enter key from also producing a "ding" system sound or inserting a newline-like side effect in the text box.
 
 ---
 
-## 8. Search Page
+## 8. Search Form
 
-### SearchWindow.xaml — Layout and Styles
+**Files:** `Views/SearchForm.cs`, `Views/SearchForm.Designer.cs`
 
-The search window uses a four-row `Grid` to divide the screen into fixed-height zones:
+### Layout via Dock
 
-```xml
-<Grid.RowDefinitions>
-    <RowDefinition Height="60"/>   <!-- Header bar -->
-    <RowDefinition Height="Auto"/> <!-- Filter panel: grows to fit content -->
-    <RowDefinition Height="*"/>    <!-- Results: takes all remaining space -->
-    <RowDefinition Height="34"/>   <!-- Status bar -->
-</Grid.RowDefinitions>
-```
-
-`Height="Auto"` means the row is exactly as tall as its content requires. `Height="*"` means the row takes all space left over after the fixed and auto rows have been measured. This makes the results grid expand to fill the window as the user resizes it.
-
-**Window-scoped styles** are declared in `<Window.Resources>` and referenced by key:
-
-```xml
-<Style x:Key="FilterLabel" TargetType="TextBlock">
-    <Setter Property="FontSize" Value="12"/>
-    <Setter Property="FontWeight" Value="SemiBold"/>
-    ...
-</Style>
-```
-
-Any `TextBlock` in this window can then write `Style="{StaticResource FilterLabel}"` instead of repeating all four property values. This is the WPF equivalent of a CSS class. `StaticResource` means the style is looked up once at load time, which is more efficient than `DynamicResource` (which re-evaluates if the resource changes at runtime).
-
-**DataGrid column definitions:**
-```xml
-<DataGrid x:Name="ResultsGrid"
-          AutoGenerateColumns="False"
-          IsReadOnly="True"
-          AlternatingRowBackground="#FAFAFA"
-          ...>
-    <DataGrid.Columns>
-        <DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="*" MinWidth="120"/>
-        <DataGridTextColumn Header="Department" Binding="{Binding Department}" Width="110"/>
-        ...
-    </DataGrid.Columns>
-</DataGrid>
-```
-
-`AutoGenerateColumns="False"` disables WPF's default behaviour of auto-creating one column per property on the bound object. This gives full control over which columns appear and in what order.
-
-`{Binding Name}` tells the DataGrid to read the `Name` property from each `Employee` object in the bound list. WPF uses reflection at runtime to find the property by name.
-
-`Width="*"` on the Name and Email columns means they share the remaining width proportionally (like `*` rows in a Grid). Fixed-width columns (e.g., `Width="110"`) always occupy exactly that many pixels.
-
-**Status badge — DataGridTemplateColumn:**
-
-The Status column uses a `DataGridTemplateColumn` instead of a `DataGridTextColumn` because it needs custom visual rendering (a coloured pill badge), not just plain text:
-
-```xml
-<DataGridTemplateColumn Header="Status" Width="90">
-    <DataGridTemplateColumn.CellTemplate>
-        <DataTemplate>
-            <Border CornerRadius="10" Padding="8,3" HorizontalAlignment="Left">
-                <Border.Style>
-                    <Style TargetType="Border">
-                        <Setter Property="Background" Value="#E5E7EB"/>
-                        <Style.Triggers>
-                            <DataTrigger Binding="{Binding Status}" Value="Active">
-                                <Setter Property="Background" Value="#D1FAE5"/>
-                            </DataTrigger>
-                            <DataTrigger Binding="{Binding Status}" Value="Inactive">
-                                <Setter Property="Background" Value="#FEE2E2"/>
-                            </DataTrigger>
-                            <DataTrigger Binding="{Binding Status}" Value="On Leave">
-                                <Setter Property="Background" Value="#FEF3C7"/>
-                            </DataTrigger>
-                        </Style.Triggers>
-                    </Style>
-                </Border.Style>
-                <TextBlock .../>
-            </Border>
-        </DataTemplate>
-    </DataGridTemplateColumn.CellTemplate>
-</DataGridTemplateColumn>
-```
-
-`DataTrigger` is a style trigger that fires when a bound data value matches a specific string. The default setter (`#E5E7EB`, grey) applies when none of the triggers match. When `Status` is `"Active"`, the background becomes green (`#D1FAE5`); `"Inactive"` turns it red; `"On Leave"` turns it amber. The same `DataTrigger` pattern is applied to the `TextBlock` inside to also change the text colour to match.
-
-**Filter panel layout:**
-
-The filters are arranged in two rows using nested `Grid` elements. The first row has five columns (Name field, spacer, Department combo, spacer, Role combo):
-
-```xml
-<Grid.ColumnDefinitions>
-    <ColumnDefinition Width="*"/>    <!-- Name: fills remaining space -->
-    <ColumnDefinition Width="14"/>   <!-- spacer -->
-    <ColumnDefinition Width="160"/>  <!-- Department -->
-    <ColumnDefinition Width="14"/>   <!-- spacer -->
-    <ColumnDefinition Width="160"/>  <!-- Role -->
-</Grid.ColumnDefinitions>
-```
-
-The `Width="14"` spacer columns replace `Margin` settings, making the gap between controls explicit and easy to adjust in one place.
-
-### SearchWindow.xaml.cs — Search Logic
+WPF's `Grid` with `RowDefinitions` (fixed/auto/star heights) has no direct WinForms equivalent; the closest analog is the `Dock` property, which docks a control against an edge of its parent and shrinks the remaining client area for whatever's added next:
 
 ```csharp
-public SearchWindow(string username)
+panelHeader.Dock = DockStyle.Top;     // docked first → claims the top strip
+panelFilters.Dock = DockStyle.Top;    // docked second → claims the next strip down
+panelStatus.Dock = DockStyle.Bottom;  // claims a strip at the bottom
+dgvResults.Dock = DockStyle.Fill;     // takes whatever space is left
+```
+
+**Important WinForms quirk:** dock processing order follows the order controls are added to the `Controls` collection, not the order their `Dock` property is set. In `InitializeComponent()`, the controls are added in this exact order at the end of the method:
+
+```csharp
+Controls.Add(panelHeader);
+Controls.Add(panelFilters);
+Controls.Add(panelStatus);
+Controls.Add(dgvResults);
+```
+
+Because `panelHeader` is added first, it claims the top strip of the *entire* client area. `panelFilters`, added second, then docks to the top of what remains (i.e., directly below the header). `panelStatus` claims a strip off the bottom of what's left after that. Finally `dgvResults`, with `Dock = DockStyle.Fill`, expands to consume whatever rectangle remains — conceptually the same effect as WPF's `Height="*"` row, but driven by add-order rather than declarative row sizing.
+
+### Tab order vs. dock order — a real bug and its fix
+
+`TabIndex` in WinForms is scoped **per container**: it only orders siblings within the same parent. Setting `txtName.TabIndex = 0` only matters relative to other controls inside `panelFilters`; it says nothing about whether `panelFilters` itself is visited before or after `panelHeader` in the overall tab sequence.
+
+During testing, this caused a real bug: because `panelHeader` (which contains `btnLogout`, a `TabStop`-enabled control) was added to the Form's `Controls` collection first, WinForms gave it the lowest top-level `TabIndex` by default — meaning **`btnLogout` received initial keyboard focus when the form opened**, not the name filter textbox. Typing a name and pressing Enter while focus was still on the Logout button caused the button's `Click` handler to fire instead of the search, immediately logging the user out and bouncing back to the login screen.
+
+The fix has two parts:
+
+1. **Explicit initial focus**, set in `SearchForm.cs`:
+   ```csharp
+   protected override void OnLoad(EventArgs e)
+   {
+       base.OnLoad(e);
+       txtName.Focus();
+   }
+   ```
+   `OnLoad` runs after the form's window handle has been created, which is required for `.Focus()` to take effect reliably — calling `.Focus()` directly in the constructor (before the handle exists, especially for a non-modal form later run via `Application.Run()`) is unreliable.
+
+2. **Explicit top-level `TabIndex` values**, set at the end of `InitializeComponent()`:
+   ```csharp
+   panelFilters.TabIndex = 0;
+   dgvResults.TabIndex = 1;
+   panelStatus.TabIndex = 2;
+   panelHeader.TabIndex = 3;
+   ```
+   This explicitly pushes `panelHeader` (and therefore `btnLogout`) to the *end* of the overall Tab key cycle, regardless of dock/add order, so that tabbing through the form from the filters never lands on Logout by surprise.
+
+### DataGridView column setup
+
+WPF's `DataGrid` with `AutoGenerateColumns="False"` and `DataGridTextColumn` has a near-identical WinForms counterpart:
+
+```csharp
+dgvResults.AutoGenerateColumns = false;
+dgvResults.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
+dgvResults.Columns.AddRange(
+    new DataGridViewTextBoxColumn { Name = "Id", HeaderText = "#", DataPropertyName = "Id", FillWeight = 50 },
+    new DataGridViewTextBoxColumn { Name = "Name", HeaderText = "Name", DataPropertyName = "Name", FillWeight = 160 },
+    // ...
+    new DataGridViewTextBoxColumn { Name = "Salary", HeaderText = "Salary", DataPropertyName = "SalaryFormatted", FillWeight = 110 }
+);
+```
+
+`AutoGenerateColumns = false` disables WinForms' default behavior of creating one column per public property via reflection — the same reasoning as the WPF version, for full control over which columns appear and in what order.
+
+`DataPropertyName` is the WinForms equivalent of WPF's `{Binding PropertyName}` — it tells the column which property on the bound object to read for each row. The Salary column reads `SalaryFormatted` rather than `Salary` directly, reusing the model's computed currency-formatting property exactly as the WPF version did.
+
+`AutoSizeColumnsMode = Fill` combined with each column's `FillWeight` is the WinForms analog of WPF's `Width="*"` star-sizing: all columns share the available width proportionally to their `FillWeight`, rather than each having a fixed pixel width. A column with `FillWeight = 160` gets roughly twice the width of one with `FillWeight = 80`.
+
+### Status color via CellFormatting
+
+WPF used a `DataGridTemplateColumn` with `DataTrigger`s to render a colored pill badge per status value. WinForms' plain `DataGridViewTextBoxColumn` has no per-value template system; instead, the `CellFormatting` event is used to inspect and recolor a cell just before it's painted:
+
+```csharp
+private void dgvResults_CellFormatting(object? sender, DataGridViewCellFormattingEventArgs e)
+{
+    if (dgvResults.Columns[e.ColumnIndex].Name != "Status" || e.Value is not string status || e.CellStyle is null)
+        return;
+
+    e.CellStyle.BackColor = status switch
+    {
+        "Active" => ColorTranslator.FromHtml("#D1FAE5"),
+        "Inactive" => ColorTranslator.FromHtml("#FEE2E2"),
+        "On Leave" => ColorTranslator.FromHtml("#FEF3C7"),
+        _ => ColorTranslator.FromHtml("#E5E7EB"),
+    };
+    e.CellStyle.ForeColor = status switch
+    {
+        "Active" => ColorTranslator.FromHtml("#065F46"),
+        "Inactive" => ColorTranslator.FromHtml("#991B1B"),
+        "On Leave" => ColorTranslator.FromHtml("#92400E"),
+        _ => ColorTranslator.FromHtml("#374151"),
+    };
+}
+```
+
+This event fires once per visible cell, every time the grid repaints. The handler first filters to only the `Status` column, guards against a non-string or null value, and against `e.CellStyle` itself being `null` (its type is nullable on the event args). It then uses a C# `switch` expression — functionally equivalent to WPF's `DataTrigger` list — to pick a background/foreground color pair matching the cell's text value, falling back to a neutral grey (`_ =>`) for any unrecognized status. This produces the same colored-badge visual effect as the WPF version, just driven by an event handler instead of declarative markup.
+
+### Search logic
+
+**File:** `Views/SearchForm.cs`
+
+```csharp
+public SearchForm(string username)
 {
     InitializeComponent();
     _username = username;
-    UserLabel.Text = $"Logged in as: {username}";
+    lblUser.Text = $"Logged in as: {username}";
     RunSearch();
 }
 ```
 
-The constructor accepts the logged-in `username` from `LoginWindow`. It calls `RunSearch()` immediately after setup, so the DataGrid shows all employees the moment the window opens, rather than showing a blank grid that requires the user to click Search first.
+The constructor receives the logged-in username from `Program.cs` (passed from `LoginForm.Username`) and calls `RunSearch()` immediately, so the grid is populated with all employees as soon as the form opens — same behavior as the WPF version.
 
-**RunSearch:**
 ```csharp
 private void RunSearch()
 {
-    var name       = NameBox.Text.Trim();
-    var department = (DepartmentCombo.SelectedItem as System.Windows.Controls.ComboBoxItem)
-                         ?.Content?.ToString();
-    var role       = (RoleCombo.SelectedItem as System.Windows.Controls.ComboBoxItem)
-                         ?.Content?.ToString();
-    var status     = (StatusCombo.SelectedItem as System.Windows.Controls.ComboBoxItem)
-                         ?.Content?.ToString();
+    var name = txtName.Text.Trim();
+    var department = cboDepartment.SelectedItem?.ToString();
+    var role = cboRole.SelectedItem?.ToString();
+    var status = cboStatus.SelectedItem?.ToString();
 
     var results = DatabaseHelper.SearchEmployees(name, department, role, status);
-    ResultsGrid.ItemsSource = results;
 
-    if (results.Count == 0)
+    dgvResults.DataSource = results;
+
+    lblStatus.Text = results.Count == 0
+        ? "No employees match the selected filters."
+        : $"{results.Count} employee{(results.Count == 1 ? "" : "s")} found.";
+}
+```
+
+Reading a WinForms `ComboBox`'s selection is simpler than WPF's: because the dropdown items are added as plain strings (`cboDepartment.Items.AddRange(new object[] { "All", "Finance", ... })`), `SelectedItem?.ToString()` returns the selected string directly — no cast to a `ComboBoxItem` wrapper and `.Content` lookup is needed, unlike the WPF version which used XAML `<ComboBoxItem>` elements.
+
+`dgvResults.DataSource = results` is the WinForms equivalent of WPF's `ResultsGrid.ItemsSource = results` — assigning a `List<Employee>` directly rebinds the grid, regenerating its rows from the new list.
+
+There is no separate "empty state" panel in the WinForms version (the WPF version toggled visibility between the `DataGrid` and an `EmptyState` panel) — when there are zero results, the grid simply renders with no rows, and the status bar label communicates the "no results" message instead.
+
+```csharp
+private void Filter_KeyDown(object? sender, KeyEventArgs e)
+{
+    if (e.KeyCode == Keys.Enter)
     {
-        EmptyState.Visibility = Visibility.Visible;
-        ResultsGrid.Visibility = Visibility.Collapsed;
-        StatusText.Text = "No employees match the selected filters.";
-    }
-    else
-    {
-        EmptyState.Visibility = Visibility.Collapsed;
-        ResultsGrid.Visibility = Visibility.Visible;
-        StatusText.Text = $"{results.Count} employee{(results.Count == 1 ? "" : "s")} found.";
+        e.SuppressKeyPress = true;
+        RunSearch();
     }
 }
 ```
 
-Reading the selected `ComboBox` value requires casting `SelectedItem` (which is typed as `object`) to `ComboBoxItem`, then reading `.Content`. The `?.` null-conditional operator is used at each step: if `SelectedItem` is `null` at any point, the whole expression short-circuits to `null` instead of throwing a `NullReferenceException`.
+This handler is wired to `txtName.KeyDown` (set in the Designer file), letting Enter in the name field trigger a search — same UX as the WPF version's input fields.
 
-`ResultsGrid.ItemsSource = results` hands the `List<Employee>` to the DataGrid. WPF's data binding engine then iterates the list and creates one row per item, pulling property values through each column's `{Binding ...}` expression.
-
-`(results.Count == 1 ? "" : "s")` is a ternary expression that correctly pluralises "employee" vs "employees" in the status bar.
-
-**Empty state toggle:**
-Rather than showing the DataGrid with no rows (which looks like a broken grid), the empty state panel (`EmptyState`) is toggled visible and the DataGrid is collapsed when there are no results. When results exist, the inverse applies. Both elements sit in the same `Grid.Row="1"` inside the results panel and overlap each other — at any time, only one is `Visible`.
-
-**ClearButton:**
 ```csharp
-private void ClearButton_Click(object sender, RoutedEventArgs e)
+private void btnClear_Click(object? sender, EventArgs e)
 {
-    NameBox.Clear();
-    DepartmentCombo.SelectedIndex = 0;
-    RoleCombo.SelectedIndex = 0;
-    StatusCombo.SelectedIndex = 0;
+    txtName.Clear();
+    cboDepartment.SelectedIndex = 0;
+    cboRole.SelectedIndex = 0;
+    cboStatus.SelectedIndex = 0;
     RunSearch();
 }
 ```
 
-`SelectedIndex = 0` selects the first item in each combo box, which is always the `"All"` option. Calling `RunSearch()` immediately after re-runs the query with no filters, showing all records.
+Resets all filters (index 0 is always `"All"` in each dropdown's item list) and re-runs the search, mirroring the WPF `ClearButton_Click` logic exactly.
 
-**Logout:**
 ```csharp
-private void LogoutButton_Click(object sender, RoutedEventArgs e)
+private void btnLogout_Click(object? sender, EventArgs e)
 {
-    var login = new LoginWindow();
-    login.Show();
+    LoggedOut = true;
     Close();
 }
 ```
 
-The reverse of login: a new `LoginWindow` is created and shown, then the current `SearchWindow` closes itself. This ensures the application always has exactly one visible window.
+Unlike the WPF version (which directly created and showed a new `LoginWindow` here), the WinForms version just sets the public `LoggedOut` flag and closes itself — the actual decision to show `LoginForm` again lives in `Program.cs`'s loop (see [Application Entry Point](#4-application-entry-point)). This keeps `SearchForm` from needing to know anything about navigation; it just reports its own exit reason.
 
 ---
 
@@ -671,7 +664,7 @@ The reverse of login: a new `LoginWindow` is created and shown, then the current
 dotnet run
     │
     ▼
-App.OnStartup()
+Program.Main()
     │  DatabaseHelper.Initialize()
     │  ├─ Open/create employeesearch.db
     │  ├─ CREATE TABLE IF NOT EXISTS Users
@@ -680,50 +673,64 @@ App.OnStartup()
     │  └─ SeedEmployees()  → insert 15 sample rows if missing
     │
     ▼
-LoginWindow opens (StartupUri)
+while (true) loop, iteration 1
+    │
+    ▼
+new LoginForm().ShowDialog()   (modal)
     │  User types username + password
     │  Clicks "Sign In" or presses Enter
     │
     ▼
-LoginWindow.AttemptLogin()
+LoginForm.AttemptLogin()
     │  DatabaseHelper.ValidateLogin(username, password)
     │  ├─ SELECT PasswordHash WHERE Username = ?
     │  └─ BCrypt.Verify(plainText, hash)  → true/false
     │
-    ├─ [FAIL] ShowError(), clear password field, stay on login
+    ├─ [FAIL] ShowError(), clear password field, dialog stays open
     │
-    └─ [OK] new SearchWindow(username).Show()
-            LoginWindow.Close()
+    └─ [OK] Username set, DialogResult = OK, Close()
+            ShowDialog() returns DialogResult.OK
                 │
                 ▼
-            SearchWindow opens
-                │  UserLabel shows "Logged in as: admin"
+            new SearchForm(username)
+            Application.Run(searchForm)   (this form is now "main")
+                │  lblUser shows "Logged in as: admin"
+                │  OnLoad → txtName.Focus()
                 │  RunSearch() called immediately (no filters)
-                │  → all 15 employees loaded into DataGrid
+                │  → all 15 employees loaded into DataGridView
                 │
-                │  User adjusts filters, clicks Search
+                │  User adjusts filters, clicks Search or presses Enter
                 │
                 ▼
-            SearchWindow.RunSearch()
-                │  Reads NameBox.Text, ComboBox selections
+            SearchForm.RunSearch()
+                │  Reads txtName.Text, ComboBox selections
                 │  DatabaseHelper.SearchEmployees(name, dept, role, status)
                 │  ├─ Build dynamic WHERE clause
                 │  ├─ Bind parameters
                 │  ├─ Execute SELECT
                 │  └─ Return List<Employee>
                 │
-                │  ResultsGrid.ItemsSource = results
-                │  Update StatusText ("X employees found")
+                │  dgvResults.DataSource = results
+                │  CellFormatting recolors Status cells
+                │  Update lblStatus ("X employees found")
                 │
                 │  User clicks Logout
                 ▼
-            new LoginWindow().Show()
-            SearchWindow.Close()
+            LoggedOut = true; Close()
+            Application.Run() returns
+                │
+                ▼
+while loop checks searchForm.LoggedOut == true → loop again → new LoginForm()
+
+(If the user closes SearchForm via the window X instead of Logout,
+ LoggedOut stays false and the while loop breaks → app exits.)
 ```
 
 ---
 
 ## 10. Security Design
+
+This section is unchanged from the WPF version — none of the security-relevant logic lives in the UI layer, so converting frameworks had no effect on it.
 
 ### Passwords are never stored in plain text
 
@@ -749,8 +756,8 @@ is treated as a literal string value, not as SQL syntax. SQL injection is struct
 
 ### Generic error messages
 
-`ValidateLogin` returns a simple `bool`. The login window shows the same error message whether the username doesn't exist or the password is wrong. This is intentional — a message like "username not found" would allow an attacker to enumerate valid usernames by probing different values.
+`ValidateLogin` returns a simple `bool`. The login form shows the same error message whether the username doesn't exist or the password is wrong. This is intentional — a message like "username not found" would allow an attacker to enumerate valid usernames by probing different values.
 
 ---
 
-*Document generated for EmployeeSearch v1.0 — .NET 8 WPF / SQLite*
+*Document generated for EmployeeSearch v2.0 — .NET 8 WinForms / SQLite*

@@ -1,6 +1,6 @@
 # Employee Search
 
-A Windows desktop application built with WPF (.NET 8) and SQLite. It provides a login screen backed by a local database and a searchable employee directory with filter controls.
+A Windows desktop application built with Windows Forms (WinForms, .NET 8) and SQLite. It provides a login screen backed by a local database and a searchable employee directory with filter controls.
 
 ---
 
@@ -56,15 +56,15 @@ Results appear in a table with colour-coded status badges. Click **Clear** to re
 
 ```
 MT_POC2/
-├── App.xaml / App.xaml.cs          # App entry point; initialises the database on startup
-├── EmployeeSearch.csproj           # Project file: .NET 8 WPF, NuGet packages
+├── Program.cs                       # App entry point; initialises the database; login/search loop
+├── EmployeeSearch.csproj            # Project file: .NET 8 WinForms, NuGet packages
 ├── Database/
-│   └── DatabaseHelper.cs           # All DB operations: init, login validation, search
+│   └── DatabaseHelper.cs            # All DB operations: init, login validation, search
 ├── Models/
-│   └── Employee.cs                 # Data class bound to the results DataGrid
+│   └── Employee.cs                  # Data class bound to the results DataGridView
 └── Views/
-    ├── LoginWindow.xaml/.cs        # Login UI and authentication logic
-    └── SearchWindow.xaml/.cs       # Filter panel, DataGrid, and search logic
+    ├── LoginForm.cs/.Designer.cs    # Login UI and authentication logic
+    └── SearchForm.cs/.Designer.cs   # Filter panel, DataGridView, and search logic
 ```
 
 **Database:** A SQLite file (`employeesearch.db`) is created automatically next to the executable on first run. No server or configuration needed.
