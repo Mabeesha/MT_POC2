@@ -261,17 +261,14 @@ partial class SearchForm
         dgvResults.CellFormatting += dgvResults_CellFormatting;
 
         // ===== SearchForm =====
-        Controls.Add(panelHeader);
-        Controls.Add(panelFilters);
-        Controls.Add(panelStatus);
+        // Dock.Top controls stack with the most-recently-added one closest to
+        // the top edge, so panelHeader must be added after panelFilters.
+        // The Fill control must be added first so it doesn't claim space that
+        // hasn't been carved out by the Top/Bottom docked panels yet.
         Controls.Add(dgvResults);
-
-        // Tab order is independent of dock order: keep filters first and
-        // logout last so Enter in the filter row never lands on Logout.
-        panelFilters.TabIndex = 0;
-        dgvResults.TabIndex = 1;
-        panelStatus.TabIndex = 2;
-        panelHeader.TabIndex = 3;
+        Controls.Add(panelStatus);
+        Controls.Add(panelFilters);
+        Controls.Add(panelHeader);
 
         ResumeLayout(false);
     }
