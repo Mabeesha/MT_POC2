@@ -10,6 +10,8 @@ public partial class LoginForm : Form
     public LoginForm()
     {
         InitializeComponent();
+        lblTitle.Left = (panelCard.Width - lblTitle.Width) / 2;
+        lblSubtitle.Left = (panelCard.Width - lblSubtitle.Width) / 2;
         txtUsername.Focus();
     }
 

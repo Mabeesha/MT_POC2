@@ -62,7 +62,7 @@ partial class SearchForm
         SuspendLayout();
 
         // SearchForm
-        AutoScaleMode = AutoScaleMode.Font;
+        AutoScaleMode = AutoScaleMode.None;
         ClientSize = new Size(1000, 700);
         MinimumSize = new Size(800, 560);
         StartPosition = FormStartPosition.CenterScreen;
@@ -122,18 +122,19 @@ partial class SearchForm
         panelFilters.Controls.Add(btnSearch);
         panelFilters.Controls.Add(btnClear);
 
-        lblFiltersTitle.AutoSize = false;
+        // AutoSize avoids GDI TextRenderer clipping the top of bold text
+        // when a fixed Height is a touch too short for the font's metrics.
+        lblFiltersTitle.AutoSize = true;
         lblFiltersTitle.Font = new Font("Segoe UI", 10F, FontStyle.Bold);
         lblFiltersTitle.ForeColor = ColorTranslator.FromHtml("#1F2937");
         lblFiltersTitle.Location = new Point(20, 12);
-        lblFiltersTitle.Size = new Size(200, 20);
         lblFiltersTitle.Text = "Search Filters";
 
         // Row 1
+        lblName.AutoSize = true;
         lblName.ForeColor = ColorTranslator.FromHtml("#374151");
         lblName.Font = new Font("Segoe UI", 8.5F, FontStyle.Bold);
         lblName.Location = new Point(20, 42);
-        lblName.Size = new Size(300, 16);
         lblName.Text = "Employee Name";
 
         txtName.Font = new Font("Segoe UI", 10F);
@@ -141,10 +142,10 @@ partial class SearchForm
         txtName.Size = new Size(606, 26);
         txtName.KeyDown += Filter_KeyDown;
 
+        lblDepartment.AutoSize = true;
         lblDepartment.ForeColor = ColorTranslator.FromHtml("#374151");
         lblDepartment.Font = new Font("Segoe UI", 8.5F, FontStyle.Bold);
         lblDepartment.Location = new Point(640, 42);
-        lblDepartment.Size = new Size(160, 16);
         lblDepartment.Text = "Department";
 
         cboDepartment.DropDownStyle = ComboBoxStyle.DropDownList;
@@ -154,10 +155,10 @@ partial class SearchForm
         cboDepartment.Items.AddRange(new object[] { "All", "Finance", "HR", "IT", "Marketing", "Operations" });
         cboDepartment.SelectedIndex = 0;
 
+        lblRole.AutoSize = true;
         lblRole.ForeColor = ColorTranslator.FromHtml("#374151");
         lblRole.Font = new Font("Segoe UI", 8.5F, FontStyle.Bold);
         lblRole.Location = new Point(814, 42);
-        lblRole.Size = new Size(160, 16);
         lblRole.Text = "Role";
 
         cboRole.DropDownStyle = ComboBoxStyle.DropDownList;
@@ -168,10 +169,10 @@ partial class SearchForm
         cboRole.SelectedIndex = 0;
 
         // Row 2
+        lblStatusFilter.AutoSize = true;
         lblStatusFilter.ForeColor = ColorTranslator.FromHtml("#374151");
         lblStatusFilter.Font = new Font("Segoe UI", 8.5F, FontStyle.Bold);
         lblStatusFilter.Location = new Point(20, 100);
-        lblStatusFilter.Size = new Size(160, 16);
         lblStatusFilter.Text = "Status";
 
         cboStatus.DropDownStyle = ComboBoxStyle.DropDownList;

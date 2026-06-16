@@ -40,7 +40,7 @@ partial class LoginForm
         SuspendLayout();
 
         // LoginForm
-        AutoScaleMode = AutoScaleMode.Font;
+        AutoScaleMode = AutoScaleMode.None;
         ClientSize = new Size(420, 520);
         FormBorderStyle = FormBorderStyle.FixedDialog;
         MaximizeBox = false;
@@ -72,26 +72,27 @@ partial class LoginForm
         lblIcon.Text = "\U0001F50D";
 
         // lblTitle
+        // AutoSize avoids GDI TextRenderer clipping the top of bold text when
+        // a fixed Height is a touch too short for the font's metrics; centered
+        // manually in the LoginForm constructor since the width is now dynamic.
+        lblTitle.AutoSize = true;
         lblTitle.Font = new Font("Segoe UI", 16F, FontStyle.Bold);
         lblTitle.ForeColor = ColorTranslator.FromHtml("#1B2838");
         lblTitle.Location = new Point(0, 70);
-        lblTitle.Size = new Size(340, 30);
-        lblTitle.TextAlign = ContentAlignment.MiddleCenter;
         lblTitle.Text = "Employee Search";
 
         // lblSubtitle
+        lblSubtitle.AutoSize = true;
         lblSubtitle.Font = new Font("Segoe UI", 9F);
         lblSubtitle.ForeColor = ColorTranslator.FromHtml("#6B7280");
-        lblSubtitle.Location = new Point(0, 102);
-        lblSubtitle.Size = new Size(340, 20);
-        lblSubtitle.TextAlign = ContentAlignment.MiddleCenter;
+        lblSubtitle.Location = new Point(0, 104);
         lblSubtitle.Text = "Sign in to your account";
 
         // lblUsername
+        lblUsername.AutoSize = true;
         lblUsername.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
         lblUsername.ForeColor = ColorTranslator.FromHtml("#374151");
         lblUsername.Location = new Point(30, 144);
-        lblUsername.Size = new Size(280, 18);
         lblUsername.Text = "Username";
 
         // txtUsername
@@ -101,10 +102,10 @@ partial class LoginForm
         txtUsername.KeyDown += Input_KeyDown;
 
         // lblPassword
+        lblPassword.AutoSize = true;
         lblPassword.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
         lblPassword.ForeColor = ColorTranslator.FromHtml("#374151");
         lblPassword.Location = new Point(30, 204);
-        lblPassword.Size = new Size(280, 18);
         lblPassword.Text = "Password";
 
         // txtPassword
