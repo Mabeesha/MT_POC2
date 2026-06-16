@@ -656,6 +656,99 @@ private void btnLogout_Click(object? sender, EventArgs e)
 
 Unlike the WPF version (which directly created and showed a new `LoginWindow` here), the WinForms version just sets the public `LoggedOut` flag and closes itself — the actual decision to show `LoginForm` again lives in `Program.cs`'s loop (see [Application Entry Point](#4-application-entry-point)). This keeps `SearchForm` from needing to know anything about navigation; it just reports its own exit reason.
 
+### Exporting results to CSV
+
+**Files:** `Views/SearchForm.Designer.cs` (button), `Views/SearchForm.cs` (export logic)
+
+A second button, `btnExport`, sits directly below `btnLogout` in `panelHeader`:
+
+```csharp
+btnExport.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+btnExport.BackColor = ColorTranslator.FromHtml("#217346");  // Excel brand green
+btnExport.FlatStyle = FlatStyle.Flat;
+btnExport.ForeColor = Color.White;
+btnExport.Text = "\U0001F4CA  Export";
+btnExport.Click += btnExport_Click;
+```
+
+The green background (`#217346`) and bar-chart icon (`\U0001F4CA`, 📊) intentionally echo Microsoft Excel's visual identity, since the button's job is conceptually "send this data to a spreadsheet."
+
+Because `panelHeader` now needs to fit two stacked button rows (Logout, then Export) instead of one, its `Height` was increased from 60 to 100, and `lblHeaderTitle` was re-centered vertically within the taller panel. `panelHeader.Size` is still set explicitly (not just `Height`) before any `Anchor`-right child is configured — see the "Anchor capture timing" note below.
+
+**Tracking what's currently visible.** `SearchForm` keeps the last set of search results in a field:
+
+```csharp
+private List<Employee> _currentResults = new();
+```
+
+`RunSearch()` assigns this field at the same time it sets `dgvResults.DataSource`, so `_currentResults` always mirrors exactly what's on screen — whatever filters (name/department/role/status) were last applied:
+
+```csharp
+var results = DatabaseHelper.SearchEmployees(name, department, role, status);
+_currentResults = results;
+dgvResults.DataSource = results;
+```
+
+**The export itself:**
+
+```csharp
+private void btnExport_Click(object? sender, EventArgs e)
+{
+    if (_currentResults.Count == 0)
+    {
+        MessageBox.Show(this, "There are no rows to export.", "Export to CSV",
+            MessageBoxButtons.OK, MessageBoxIcon.Information);
+        return;
+    }
+
+    using var dialog = new SaveFileDialog
+    {
+        Filter = "CSV files (*.csv)|*.csv",
+        FileName = $"employees_{DateTime.Now:yyyyMMdd_HHmmss}.csv"
+    };
+
+    if (dialog.ShowDialog(this) != DialogResult.OK)
+        return;
+
+    File.WriteAllText(dialog.FileName, BuildCsv(_currentResults), Encoding.UTF8);
+
+    lblStatus.Text = $"Exported {_currentResults.Count} employee{(_currentResults.Count == 1 ? "" : "s")} to {Path.GetFileName(dialog.FileName)}.";
+}
+```
+
+A `SaveFileDialog` is the standard WinForms way to let the user pick a destination file/folder — it's the same OS-native dialog used by virtually every Windows application's "Save As." Restricting `Filter` to `*.csv` and pre-filling `FileName` with a timestamp avoids accidental overwrites between exports. If there are zero rows currently displayed (e.g., a filter combination matched nothing), the method short-circuits with a `MessageBox` instead of writing an empty file.
+
+`BuildCsv` and `CsvField` do the actual formatting:
+
+```csharp
+private static string BuildCsv(List<Employee> rows)
+{
+    var sb = new StringBuilder();
+    sb.AppendLine(string.Join(",", "Id", "Name", "Department", "Role", "Status", "Email", "Phone", "HireDate", "Salary"));
+
+    foreach (var r in rows)
+    {
+        sb.AppendLine(string.Join(",",
+            CsvField(r.Id), CsvField(r.Name), CsvField(r.Department), CsvField(r.Role),
+            CsvField(r.Status), CsvField(r.Email), CsvField(r.Phone), CsvField(r.HireDate), CsvField(r.Salary)));
+    }
+
+    return sb.ToString();
+}
+
+private static string CsvField(object value)
+{
+    var text = value.ToString() ?? "";
+    return text.Contains(',') || text.Contains('"') || text.Contains('\n')
+        ? $"\"{text.Replace("\"", "\"\"")}\""
+        : text;
+}
+```
+
+This writes plain CSV by hand (no third-party CSV library is referenced in the project) following the relevant parts of RFC 4180: any field containing a comma, a double quote, or a newline is wrapped in double quotes, with internal double quotes doubled (`"` → `""`). Every other field is written as-is. The exported `Salary` column uses the raw numeric value (e.g. `85000`), not the `SalaryFormatted` currency string (`$85,000`) used in the on-screen grid — this keeps the CSV machine-readable (importable into Excel/Sheets as a number, not a formatted string) at the cost of not matching the grid's display formatting exactly.
+
+**Anchor capture timing (why `panelHeader.Size` is set explicitly).** `lblUser`, `btnLogout`, and `btnExport` (and `btnSearch`/`btnClear` in `panelFilters`) all use `Anchor = AnchorStyles.Top | AnchorStyles.Right`. WinForms captures each anchored control's "distance to the parent's right edge" at the moment the control's bounds are set *relative to whatever size the parent currently has* — and `panelHeader`/`panelFilters` are `Dock.Top` panels that only get stretched to the form's full width once an actual layout pass runs, which is later than `InitializeComponent()` sets up these children. Without an explicit `Size` assignment up front, the captured anchor distances would be computed against the wrong (pre-Dock) width, and the controls would end up mispositioned — overlapping each other — once Dock resolves the real width. Setting `panelHeader.Size = new Size(1000, 100)` (matching `ClientSize.Width`) before any anchored child is configured sidesteps this entirely.
+
 ---
 
 ## 9. End-to-End Application Flow

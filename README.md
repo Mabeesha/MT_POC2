@@ -48,7 +48,9 @@ Double-click the `.exe` — no installation or .NET runtime required on the targ
 | Role | Dropdown | Exact match (Analyst, Coordinator, Designer, Developer, Manager) |
 | Status | Dropdown | Exact match (Active, Inactive, On Leave) |
 
-Results appear in a table with colour-coded status badges. Click **Clear** to reset all filters. Click **Logout** to return to the login screen.
+**Exporting results** — Click the green **Export** button (below Logout) to save the rows currently shown in the grid to a CSV file. A Save dialog lets you choose the file name/location; the default name is `employees_<timestamp>.csv`. Only the rows matching the active filters are exported — exporting after filtering by `Status = Active`, for example, writes only the active employees.
+
+Results appear in a table with colour-coded status badges. Click **Clear** to reset all filters. Click **Export** to save the currently displayed rows (i.e. whatever the active filters show) to a CSV file. Click **Logout** to return to the login screen.
 
 ---
 

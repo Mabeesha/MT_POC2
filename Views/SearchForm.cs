@@ -1,10 +1,13 @@
+using System.Text;
 using EmployeeSearch.Database;
+using EmployeeSearch.Models;
 
 namespace EmployeeSearch.Views;
 
 public partial class SearchForm : Form
 {
     private readonly string _username;
+    private List<Employee> _currentResults = new();
 
     public bool LoggedOut { get; private set; }
 
@@ -48,6 +51,59 @@ public partial class SearchForm : Form
         Close();
     }
 
+    private void btnExport_Click(object? sender, EventArgs e)
+    {
+        if (_currentResults.Count == 0)
+        {
+            MessageBox.Show(this, "There are no rows to export.", "Export to CSV",
+                MessageBoxButtons.OK, MessageBoxIcon.Information);
+            return;
+        }
+
+        using var dialog = new SaveFileDialog
+        {
+            Filter = "CSV files (*.csv)|*.csv",
+            FileName = $"employees_{DateTime.Now:yyyyMMdd_HHmmss}.csv"
+        };
+
+        if (dialog.ShowDialog(this) != DialogResult.OK)
+            return;
+
+        File.WriteAllText(dialog.FileName, BuildCsv(_currentResults), Encoding.UTF8);
+
+        lblStatus.Text = $"Exported {_currentResults.Count} employee{(_currentResults.Count == 1 ? "" : "s")} to {Path.GetFileName(dialog.FileName)}.";
+    }
+
+    private static string BuildCsv(List<Employee> rows)
+    {
+        var sb = new StringBuilder();
+        sb.AppendLine(string.Join(",", "Id", "Name", "Department", "Role", "Status", "Email", "Phone", "HireDate", "Salary"));
+
+        foreach (var r in rows)
+        {
+            sb.AppendLine(string.Join(",",
+                CsvField(r.Id),
+                CsvField(r.Name),
+                CsvField(r.Department),
+                CsvField(r.Role),
+                CsvField(r.Status),
+                CsvField(r.Email),
+                CsvField(r.Phone),
+                CsvField(r.HireDate),
+                CsvField(r.Salary)));
+        }
+
+        return sb.ToString();
+    }
+
+    private static string CsvField(object value)
+    {
+        var text = value.ToString() ?? "";
+        return text.Contains(',') || text.Contains('"') || text.Contains('\n')
+            ? $"\"{text.Replace("\"", "\"\"")}\""
+            : text;
+    }
+
     private void RunSearch()
     {
         var name = txtName.Text.Trim();
@@ -57,6 +113,7 @@ public partial class SearchForm : Form
 
         var results = DatabaseHelper.SearchEmployees(name, department, role, status);
 
+        _currentResults = results;
         dgvResults.DataSource = results;
 
         lblStatus.Text = results.Count == 0

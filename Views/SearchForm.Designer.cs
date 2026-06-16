@@ -15,6 +15,7 @@ partial class SearchForm
     private Label lblHeaderTitle = null!;
     private Label lblUser = null!;
     private Button btnLogout = null!;
+    private Button btnExport = null!;
 
     private Panel panelFilters = null!;
     private Label lblFiltersTitle = null!;
@@ -40,6 +41,7 @@ partial class SearchForm
         lblHeaderTitle = new Label();
         lblUser = new Label();
         btnLogout = new Button();
+        btnExport = new Button();
 
         panelFilters = new Panel();
         lblFiltersTitle = new Label();
@@ -76,16 +78,18 @@ partial class SearchForm
         // Anchor-right children below are positioned: Dock only stretches the
         // panel to the form's width once a layout pass runs, which is too late
         // for the Anchor distance-to-right-edge to be captured correctly.
-        panelHeader.Size = new Size(1000, 60);
+        // Height is taller than a single button row to fit Export below Logout.
+        panelHeader.Size = new Size(1000, 100);
         panelHeader.BackColor = ColorTranslator.FromHtml("#1B2A4A");
         panelHeader.Controls.Add(lblHeaderTitle);
         panelHeader.Controls.Add(lblUser);
         panelHeader.Controls.Add(btnLogout);
+        panelHeader.Controls.Add(btnExport);
 
         lblHeaderTitle.AutoSize = false;
         lblHeaderTitle.Font = new Font("Segoe UI", 13F, FontStyle.Bold);
         lblHeaderTitle.ForeColor = Color.White;
-        lblHeaderTitle.Location = new Point(20, 15);
+        lblHeaderTitle.Location = new Point(20, 35);
         lblHeaderTitle.Size = new Size(320, 30);
         lblHeaderTitle.Text = "\U0001F50D  Employee Search";
         lblHeaderTitle.TextAlign = ContentAlignment.MiddleLeft;
@@ -109,6 +113,22 @@ partial class SearchForm
         btnLogout.Text = "Logout";
         btnLogout.Cursor = Cursors.Hand;
         btnLogout.Click += btnLogout_Click;
+
+        // btnExport — Excel-green button (matches Microsoft Excel's brand
+        // color/icon style) for exporting the currently visible rows to CSV.
+        btnExport.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+        btnExport.BackColor = ColorTranslator.FromHtml("#217346");
+        btnExport.FlatStyle = FlatStyle.Flat;
+        btnExport.FlatAppearance.BorderSize = 0;
+        btnExport.FlatAppearance.MouseOverBackColor = ColorTranslator.FromHtml("#1A5C37");
+        btnExport.FlatAppearance.MouseDownBackColor = ColorTranslator.FromHtml("#134628");
+        btnExport.ForeColor = Color.White;
+        btnExport.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
+        btnExport.Location = new Point(850, 54);
+        btnExport.Size = new Size(130, 32);
+        btnExport.Text = "\U0001F4CA  Export";
+        btnExport.Cursor = Cursors.Hand;
+        btnExport.Click += btnExport_Click;
 
         // ===== Filters =====
         panelFilters.Dock = DockStyle.Top;
