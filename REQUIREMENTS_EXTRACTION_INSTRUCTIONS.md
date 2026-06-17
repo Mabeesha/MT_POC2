@@ -12,10 +12,53 @@ Java/Spring Boot (backend) + a relational database**. A later agent will use you
 to plan and build the replacement. The quality of the migration depends on the
 completeness and accuracy of what you produce here.
 
+> **Read the Project-Wide Constraints (§0) first.** They are fixed decisions for the whole
+> modernization program and they change *how* you extract certain requirements — chiefly
+> the data model and authentication.
+
 > **Golden rule: describe behavior, not implementation.** Capture *what* and *why*, not
 > the .NET *how*. Where the "how" matters (a business rule encoded in a SQL query, a
 > validation regex, a hashing scheme), extract the **rule**, and cite the source location
 > so it can be verified — but do not prescribe how the new stack should implement it.
+
+---
+
+## §0 — Project-Wide Constraints (fixed decisions)
+
+These apply to **every** app in the modernization program. They are not yours to
+re-decide; they shape what you must capture.
+
+### C1 — Reuse the existing database (no schema redesign, no data migration)
+The modernized app will **connect to the existing database as-is**. We are *not*
+redesigning the schema, generating a new one, or migrating data. The new Spring Boot
+backend maps onto the current tables.
+
+Because of this, the **Data Model section (§2.3) must be exact and authoritative**:
+- Capture **real table and column names verbatim** (exact casing/spelling), data types,
+  sizes, nullability, defaults, primary/foreign keys, indexes, and unique constraints.
+- Note where the schema lives and who owns it (created by the app vs. an external DB).
+  `ASSUMPTION:`/`OPEN QUESTION:` if the app doesn't fully reveal the live schema.
+- Capture the **connection details shape** (connection string keys, DB engine/version,
+  schema/owner names) — not secrets, but enough to know what the backend must connect to.
+- Flag anything that will make JPA/Hibernate mapping awkward: composite keys, triggers,
+  stored procedures, computed columns, non-standard types, naming that won't map cleanly.
+- The backend will use `ddl-auto=validate` (never `create`/`update`) against this DB —
+  so accuracy here directly determines whether the app starts. Record schema facts as
+  **constraints to honor**, not as a design to improve.
+
+### C2 — Authentication & Authorization: Active Directory placeholder
+Target authn/authz will use **Active Directory** (e.g. LDAP / Windows Integrated Auth /
+Kerberos, or AD-backed OIDC) — final mechanism to be decided later. For now:
+- **Document the app's current auth/authz behavior fully** (per §2.6) — it is still the
+  source of truth for *what access rules exist*.
+- Capture the **authorization model in AD-mappable terms**: list every role / permission /
+  group and what each can do, so they can later map to **AD groups/claims**. Note where
+  each check is enforced.
+- Treat AD integration as a **clearly-marked placeholder**, not an implemented design:
+  surface it as a forward-looking flag in §3 / §12 and a `TODO (AD)` item, including any
+  current concept (username, domain account, role table) that AD will replace.
+- Do **not** propose a specific AD/LDAP configuration — just identify the seam where it
+  plugs in and what data (identity, groups) it must supply.
 
 ---
 
@@ -83,7 +126,7 @@ For every user-facing feature and significant background behavior, capture:
 - UI behaviors that carry meaning: conditional show/hide/enable, color/badge coding (and
   what each color means), sorting/paging/grouping, inline validation messaging.
 
-### 2.3 Data Model
+### 2.3 Data Model  — *critical: the existing DB is reused as-is (see §0 C1)*
 - Every entity/table: name, fields, types, sizes, nullability, defaults, keys.
 - **Relationships** (1:1, 1:N, N:N) and referential rules (cascade deletes, etc.).
 - **Constraints**: uniqueness, check constraints, valid value ranges/enumerations.
@@ -104,7 +147,7 @@ For every user-facing feature and significant background behavior, capture:
   dynamic/conditional queries — these encode search and filter rules.
 - Transactions, concurrency handling, and any caching.
 
-### 2.6 Authentication & Security
+### 2.6 Authentication & Security  — *target is Active Directory (see §0 C2)*
 - How users authenticate (forms login, Windows auth, SSO, tokens).
 - Password handling (hashing scheme + work factor, if present), session/token management.
 - Authorization model (roles, claims, permission checks).
