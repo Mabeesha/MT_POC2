@@ -23,8 +23,9 @@ build, run, and verify as you go.
    dependency order. Path is given in the prompt.
 2. **Reference — the design document** (`DESIGN_<AppName>.md`). The authoritative contracts:
    API endpoints, entity↔table mappings, component/route structure, auth seam.
-3. **Reference — the requirements file** (`REQUIREMENTS_<AppName>.md`). For intent,
-   business rules, exact values, and acceptance behavior.
+3. **Reference — the two requirements files** (`BUSINESS_REQUIREMENTS_<AppName>.md` and
+   `TECHNICAL_REQUIREMENTS_<AppName>.md`). For intent, business rules, exact values, and
+   acceptance behavior.
 4. **Rarely — the original .NET codebase.** Only to confirm an exact detail the design
    defers to it (e.g. precise schema for C1). Do **not** copy its structure or patterns.
 
@@ -46,6 +47,11 @@ conflict is material, flag it (§When You're Blocked) rather than guessing.
 - **C2 — Auth/Authz via Active Directory (placeholder).** Implement the **auth seam
   (interface) + a dev stub** so the app runs and enforces roles now. Leave AD wiring as a
   clearly marked **`TODO (AD)`**; do not hardcode AD/LDAP config or credentials.
+- **C3 — Java follows the [Google Java Style Guide](https://google.github.io/styleguide/javaguidelines.html).**
+  All backend Java code conforms to it. Enforce it mechanically by wiring
+  **google-java-format** into the Maven build (e.g. the **Spotless** plugin or
+  `fmt-maven-plugin`) during setup, so formatting is applied automatically and the build
+  fails on violations. The frontend stays idiomatic Angular (Prettier / Angular style guide).
 
 ---
 
@@ -64,7 +70,8 @@ conflict is material, flag it (§When You're Blocked) rather than guessing.
    from the requirements.
 5. **Idiomatic, clean code.** Write code that fits the target stack's conventions. Do not
    reproduce WinForms/.NET structure. Match the surrounding code's style as the project
-   grows.
+   grows. Backend Java conforms to the Google Java Style Guide, enforced by the formatter
+   (C3); run it before considering a task verified.
 6. **Stay in scope.** Build what the plan/design specify. Don't add features, fields, or
    endpoints that aren't called for. Surface gold-plating temptations instead of building
    them.
@@ -128,6 +135,8 @@ For the overall implementation:
 - [ ] Every requirements screen is implemented as the designed component(s)/route(s) with
       its validation and states.
 - [ ] Automated tests pass and cover the key business rules and edge cases.
+- [ ] Backend Java is formatted to the Google Java Style Guide and the formatter check
+      passes in the build (C3).
 - [ ] No secrets in source; config via profiles/env vars; CORS configured for the frontend.
 - [ ] All requirement IDs are satisfied (cross-check the plan's traceability matrix).
 - [ ] Blockers, open questions, and assumptions are reported, not silently resolved.

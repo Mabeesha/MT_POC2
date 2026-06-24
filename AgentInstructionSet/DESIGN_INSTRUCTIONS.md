@@ -10,7 +10,9 @@ contracts (APIs, data mappings, component responsibilities) and **diagrams** ove
 do not carry over .NET/WinForms structure. Design idiomatic Angular + Spring Boot.
 
 ## Inputs (authority order: requirements → .NET code)
-1. **Requirements** (`REQUIREMENTS_<App>.md`) — source of truth; everything traces to it.
+1. **Requirements** — `BUSINESS_REQUIREMENTS_<App>.md` (features, rules, screens, roles)
+   and `TECHNICAL_REQUIREMENTS_<App>.md` (data model, security, integrations, config).
+   Together the source of truth; everything traces to their IDs.
 2. **Original .NET code** — sparingly, only to confirm the **exact DB schema** (C1) or
    resolve a flagged `OPEN QUESTION:`/ambiguous value. **Guardrails:** don't mirror its
    structure/naming/UI; if the code reveals behavior the requirements missed, add it to
@@ -27,6 +29,8 @@ do not carry over .NET/WinForms structure. Design idiomatic Angular + Spring Boo
 - **C2 — Auth via Active Directory (placeholder).** Design a clean **auth seam** (interface
   + dev stub) AD will plug into later; map roles to **AD-group-mappable** terms; mark AD
   wiring `TODO (AD)`; don't commit to a specific AD/LDAP config.
+- **C3 — Java follows the Google Java Style Guide**, enforced via google-java-format
+  (Spotless/`fmt-maven-plugin`) in the build. Record this in §3 Technology & Dependencies.
 
 ## Hard Rules
 1. **Trace everything** to requirement IDs; include a traceability matrix.

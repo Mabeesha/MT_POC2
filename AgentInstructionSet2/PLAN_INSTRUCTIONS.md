@@ -21,8 +21,9 @@ re-design.
 
 1. **Primary input — the design document** (`DESIGN_<AppName>.md`). Your source of truth
    for *what* to build. Path is given in the prompt.
-2. **Secondary reference — the requirements file** (`REQUIREMENTS_<AppName>.md`). Use it to
-   understand intent and to keep traceability (requirement IDs flow through to tasks).
+2. **Secondary reference — the two requirements files**
+   (`BUSINESS_REQUIREMENTS_<AppName>.md` and `TECHNICAL_REQUIREMENTS_<AppName>.md`). Use them
+   to understand intent and keep traceability (requirement IDs flow through to tasks).
 3. **Rarely — the original .NET codebase.** Only if the design points to it for a detail
    (e.g. exact schema for C1). Same guardrails as the design phase: do not port structure.
 
@@ -45,6 +46,9 @@ steps that confirm them:
 - **C2 — Auth/Authz via Active Directory (placeholder).** Plan the **auth seam + dev stub**
   early; mark AD wiring as a deferred `TODO (AD)` task. Don't plan a specific AD/LDAP
   configuration.
+- **C3 — Java follows the Google Java Style Guide.** Include a setup task to wire
+  **google-java-format** (Spotless / `fmt-maven-plugin`) into the Maven build so formatting
+  is automatic and the build fails on violations.
 
 ---
 
@@ -80,7 +84,8 @@ Group tasks into ordered **phases / milestones**, each ending in something verif
 A sensible default order (adapt to the app):
 
 1. **Project setup** — backend scaffold (Maven, dependencies, profiles), frontend scaffold
-   (`ng new` + Angular Material), repo structure, run/build baseline.
+   (`ng new` + Angular Material), repo structure, run/build baseline, and the
+   google-java-format plugin wired into the build (C3).
 2. **Data layer (C1)** — DB connection config, JPA entities mapped to existing tables,
    repositories, **schema validation against the real DB**.
 3. **Auth seam (C2)** — interface + dev stub, security config, role→AD-group model,

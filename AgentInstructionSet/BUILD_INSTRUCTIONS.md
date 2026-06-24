@@ -11,7 +11,8 @@ missing something material, **stop and report** — don't improvise.
 
 ## Inputs (authority order: design → requirements → .NET code)
 1. **Design** (`DESIGN_<App>.md`) — primary; the authoritative contracts.
-2. **Requirements** (`REQUIREMENTS_<App>.md`) — intent, business rules, exact values.
+2. **Requirements** — `BUSINESS_REQUIREMENTS_<App>.md` (intent, business rules, exact
+   values) and `TECHNICAL_REQUIREMENTS_<App>.md` (data model, security, integrations).
 3. **Original .NET code** — only to confirm a detail the design defers to it (e.g. exact
    schema). Never copy its structure or patterns.
 
@@ -24,13 +25,18 @@ missing something material, **stop and report** — don't improvise.
 - **C2 — Auth via Active Directory (placeholder).** Build an auth seam (interface) + dev
   stub that enforces roles now; leave AD wiring as `TODO (AD)`. No AD/LDAP config or
   secrets in code.
+- **C3 — Java code follows the [Google Java Style Guide](https://google.github.io/styleguide/javaguidelines.html).**
+  Enforce it mechanically with **google-java-format** wired into the build (e.g. the
+  Spotless Maven plugin or `fmt-maven-plugin`) so formatting is automatic and the build
+  fails on violations. (Frontend stays idiomatic Angular — Prettier/Angular style guide.)
 
 ## Step 1 — Plan
 Read the design (cross-check requirements). Produce a brief `PLAN_<App>.md`: an ordered
 task list grouped into phases, each task with an ID, dependencies, scope, the design/
 requirement IDs it implements, and acceptance criteria. Default phase order:
 
-1. **Setup** — backend + frontend scaffolds, profiles, build baseline.
+1. **Setup** — backend + frontend scaffolds, profiles, build baseline; wire the
+   google-java-format plugin into the Maven build (C3).
 2. **Data layer (C1)** — JPA entities on existing tables, repositories, **validate mapping
    against the real DB**.
 3. **Auth seam (C2)** — interface + dev stub, security config, role→AD-group model, CORS.
@@ -52,7 +58,8 @@ Every task and phase must trace to design/requirement IDs and have a verifiable 
 - Follow the plan in dependency order; honor design contracts (paths, verbs, shapes, status
   codes, entity/column names, validation rules) exactly.
 - Verify every task before moving on; a task isn't done until verified.
-- Write idiomatic Angular/Spring Boot — do not reproduce .NET/WinForms structure.
+- Write idiomatic Angular/Spring Boot — do not reproduce .NET/WinForms structure. Java
+  conforms to the Google Java Style Guide, enforced by the formatter (C3).
 - Stay in scope; no secrets in code (config via profiles/env vars).
 - Read-only on the legacy app; non-destructive on the DB.
 
@@ -70,6 +77,7 @@ options. Record unresolved items as `OPEN QUESTION:` / `ASSUMPTION:`.
 - [ ] Every endpoint matches the design contract and is covered by a test.
 - [ ] Every requirements screen is implemented with its validation and states.
 - [ ] Tests pass; no secrets in source; CORS configured.
+- [ ] Java is formatted to the Google Java Style Guide and the formatter check passes (C3).
 - [ ] All requirement IDs satisfied; blockers/questions reported, not silently resolved.
 
 ## Additional Instructions
