@@ -22,9 +22,10 @@ missing something material, **stop and report** — don't improvise.
 - **C1 — Reuse the existing DB as-is.** Map JPA entities to current tables with exact
   names; run `ddl-auto=validate` (never create/update against the real DB). Fix the
   *mapping* if validation fails, never the schema. (A throwaway DB for unit tests is fine.)
-- **C2 — Auth via Active Directory (placeholder).** Build an auth seam (interface) + dev
-  stub that enforces roles now; leave AD wiring as `TODO (AD)`. No AD/LDAP config or
-  secrets in code.
+- **C2 — Auth approach follows the current app.** If the design specifies **real AD auth**
+  (the .NET app was AD-based), implement AD authentication per the design. Otherwise build an
+  auth seam (interface) + dev stub that enforces roles now and leave AD wiring as
+  `TODO (AD)`. No AD/LDAP config or secrets in code either way.
 - **C3 — Java code follows the [Google Java Style Guide](https://google.github.io/styleguide/javaguidelines.html).**
   Enforce it mechanically with **google-java-format** wired into the build (e.g. the
   Spotless Maven plugin or `fmt-maven-plugin`) so formatting is automatic and the build
@@ -65,15 +66,17 @@ Every task and phase must trace to design/requirement IDs and have a verifiable 
 
 ## When Blocked — stop and report (don't improvise)
 Design contradictory/ambiguous on a material point; DB schema doesn't match and the
-mapping can't be reconciled (C1); a task needs AD specifics (C2 — build the stub, mark
-`TODO (AD)`); or access/credentials unavailable. State the blocker, what you tried, and the
+mapping can't be reconciled (C1); a placeholder-path task needs AD specifics (C2 — build the
+stub, mark `TODO (AD)`), or a real-AD-path task lacks AD/LDAP connection details (C2 — report
+and wait, don't invent config); or access/credentials unavailable. State the blocker, what you tried, and the
 options. Record unresolved items as `OPEN QUESTION:` / `ASSUMPTION:`.
 
 ## Definition of Done
 - [ ] Every plan task done & verified, or reported as blocked.
 - [ ] Backend and frontend build, run, and integrate end to end.
 - [ ] App starts and **validates cleanly against the existing DB** with matching names (C1).
-- [ ] Auth seam + dev stub enforces roles; AD marked `TODO (AD)` (C2).
+- [ ] Auth enforces roles per C2: real AD auth if the app was AD-based, else seam + dev stub
+      with AD marked `TODO (AD)`.
 - [ ] Every endpoint matches the design contract and is covered by a test.
 - [ ] Every requirements screen is implemented with its validation and states.
 - [ ] Tests pass; no secrets in source; CORS configured.

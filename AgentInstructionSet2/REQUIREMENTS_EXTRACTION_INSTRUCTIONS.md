@@ -57,18 +57,25 @@ Because of this, the **Data Model section (§2.3) must be exact and authoritativ
   so accuracy here directly determines whether the app starts. Record schema facts as
   **constraints to honor**, not as a design to improve.
 
-### C2 — Authentication & Authorization: Active Directory placeholder
-Target authn/authz will use **Active Directory** (e.g. LDAP / Windows Integrated Auth /
-Kerberos, or AD-backed OIDC) — final mechanism to be decided later. For now:
-- **Document the app's current auth/authz behavior fully** (per §2.6) — it is still the
-  source of truth for *what access rules exist*.
+### C2 — Authentication & Authorization: approach depends on the current app
+The target auth approach is **determined by what the .NET app does today**:
+- **If the app already authenticates against Active Directory** (LDAP / Windows Integrated
+  Auth / Kerberos / AD-backed OIDC), the modernized app **keeps real AD-based auth** — it is
+  not a placeholder. Record this clearly so design and build implement AD directly.
+- **If the app does not use AD** (local users table, forms login, custom scheme, etc.), the
+  modernized app uses an **auth seam + dev stub** with AD deferred as a `TODO (AD)`
+  placeholder — the final AD mechanism to be decided later.
+
+Regardless of the path:
+- **Document the app's current auth/authz behavior fully** (per §2.6) — it is the source of
+  truth for *what access rules exist* — and **state explicitly which path applies** (already
+  AD-based vs. not).
 - Capture the **authorization model in AD-mappable terms**: list every role / permission /
-  group and what each can do, so they can later map to **AD groups/claims**. Note where
-  each check is enforced.
-- Treat AD integration as a **clearly-marked placeholder**, not an implemented design:
-  surface it as a forward-looking flag in §3 / §12 and a `TODO (AD)` item, including any
-  current concept (username, domain account, role table) that AD will replace.
-- Do **not** propose a specific AD/LDAP configuration — just identify the seam where it
+  group and what each can do, so they map cleanly to **AD groups/claims**. Note where each
+  check is enforced.
+- Surface the auth direction as a flag in §3 / §12; for the non-AD path, mark it `TODO (AD)`
+  and note any current concept (username, domain account, role table) that AD will replace.
+- Do **not** propose a specific AD/LDAP configuration — just identify the seam where AD
   plugs in and what data (identity, groups) it must supply.
 
 ---
@@ -164,8 +171,9 @@ For every user-facing feature and significant background behavior, capture:
   dynamic/conditional queries — these encode search and filter rules.
 - Transactions, concurrency handling, and any caching.
 
-### 2.6 [TECH] Authentication & Security  — *target is Active Directory (see §0 C2)*
-- How users authenticate (forms login, Windows auth, SSO, tokens).
+### 2.6 [TECH] Authentication & Security  — *note whether current auth is AD-based (see §0 C2)*
+- How users authenticate (forms login, Windows auth, SSO, tokens). **State whether this is
+  Active Directory-based** — it decides the target auth path per C2.
 - Password handling (hashing scheme + work factor, if present), session/token management.
 - Authorization model (roles, claims, permission checks).
 - Sensitive data handling, encryption, secrets in config. **Flag** anything insecure
@@ -264,9 +272,10 @@ unspecified). Both share the same `<AppName>`.
 ## 3. Data Access & Persistence
    - Numbered (DA-1, …). Query/intent inventory; transactions; concurrency; caching.
 
-## 4. Authentication & Security  (C2 — AD placeholder)
+## 4. Authentication & Security  (C2)
    - Numbered (SEC-1, …). Current mechanics + a clearly separated "Security Concerns /
-     Risks" list. `TODO (AD)` for the AD seam.
+     Risks" list. **State whether current auth is AD-based** and which C2 path applies
+     (real AD auth vs. seam + `TODO (AD)`).
 
 ## 5. Integrations & External Dependencies
    - Numbered (INT-1, …). One row/subsection per external system.

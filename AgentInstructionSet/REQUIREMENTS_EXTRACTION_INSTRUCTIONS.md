@@ -29,9 +29,14 @@ honor**, not as a design to keep.)
   stored procs, computed columns). Note where the schema lives; mark `OPEN QUESTION:` if
   the code doesn't reveal the live schema. (The new backend runs `ddl-auto=validate`, so
   accuracy here decides whether it starts.)
-- **C2 — Auth/Authz via Active Directory (later)**. Document current auth fully, but capture
-  the authorization model in **AD-mappable terms**: every role/permission/group, what each
-  can do, and where it's enforced. Mark AD as a `TODO (AD)` placeholder; don't design it.
+- **C2 — Auth approach depends on the current app.** Document current auth fully and
+  **state explicitly whether the .NET app already uses Active Directory** (LDAP / Windows
+  Integrated Auth / Kerberos / AD-backed OIDC). Capture the authorization model in
+  **AD-mappable terms**: every role/permission/group, what each can do, and where it's
+  enforced. Then flag which path applies: **if it is already AD-based**, the modernized app
+  keeps real AD authentication; **if it is not** (local users table, forms login, etc.), the
+  modernized app uses an auth seam + dev stub with AD deferred as `TODO (AD)`. Record the
+  facts and the path — don't design the mechanism here.
 
 ## Hard Rules
 1. **Survey before you write** — inventory the whole codebase first.
@@ -70,8 +75,8 @@ category feeds — **[BUS]** = Business doc, **[TECH]** = Technical doc.
 - **[TECH] Data Access** — ORM/raw SQL/stored procs; intent of significant (esp. dynamic)
   queries; transactions, concurrency, caching.
 - **[TECH] Auth & Security (C2)** — authentication mechanics, password hashing, sessions,
-  how role checks are enforced; flag insecure handling (plaintext, secrets in source,
-  injection) — still document it.
+  how role checks are enforced; **state whether auth is AD-based** (decides the C2 path);
+  flag insecure handling (plaintext, secrets in source, injection) — still document it.
 - **[TECH] Integrations** — each external system: direction, data, format, protocol, auth,
   failure behavior (capture endpoints and file formats, e.g. CSV column order).
 - **[TECH] Background/Scheduled** — timers, jobs, services, consumers: what, how often, deps.

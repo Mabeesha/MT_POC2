@@ -26,9 +26,11 @@ do not carry over .NET/WinForms structure. Design idiomatic Angular + Spring Boo
   names; backend runs `ddl-auto=validate` (never create/update). Treat the schema as a
   fixed contract; design the mapping around awkward bits (composite keys, triggers, stored
   procs, computed columns).
-- **C2 — Auth via Active Directory (placeholder).** Design a clean **auth seam** (interface
-  + dev stub) AD will plug into later; map roles to **AD-group-mappable** terms; mark AD
-  wiring `TODO (AD)`; don't commit to a specific AD/LDAP config.
+- **C2 — Auth approach follows the current app.** If the requirements say the .NET app
+  **already uses Active Directory**, design **real AD-based authentication** (LDAP / Windows
+  Integrated Auth / AD-backed OIDC) as the actual mechanism. If it does **not**, design a
+  clean **auth seam** (interface + dev stub) AD will plug into later and mark AD wiring
+  `TODO (AD)`. Either way, map roles to **AD-group-mappable** terms.
 - **C3 — Java follows the Google Java Style Guide**, enforced via google-java-format
   (Spotless/`fmt-maven-plugin`) in the build. Record this in §3 Technology & Dependencies.
 
@@ -68,7 +70,8 @@ mapping risks · 5. Backend Design — component diagram + **REST API contract t
 (method, path, params, request/response, status codes, auth) + DTOs/services/repositories/
 validation/error handling · 6. Frontend Design — component & routing tree + per-screen
 (component, route, fields, actions, validation, states, APIs called) · 7. Auth/Authz (C2) —
-seam + dev stub, role→AD-group mapping table, enforcement points, `TODO (AD)` · 8.
+real AD auth if the app was AD-based else seam + dev stub with `TODO (AD)`, role→AD-group
+mapping table, enforcement points · 8.
 Integrations · 9. Cross-Cutting Concerns · 10. Key Flows (sequence diagrams) · 11. Build,
 Run & Deployment (incl. connecting to existing DB — config shape, not secrets) · 12. Open
 Questions, Risks & Assumptions · 13. Traceability Matrix (requirement ID → design element)
@@ -82,7 +85,8 @@ traceability; entity/column names exactly as in the DB (C1); Mermaid for diagram
 - [ ] Every requirement ID is in the design and the traceability matrix.
 - [ ] Data model maps onto the existing schema with exact names, `ddl-auto=validate`-
       compatible; mapping risks flagged (C1).
-- [ ] Auth seam + dev stub + AD-mappable roles; AD marked `TODO (AD)` (C2).
+- [ ] Auth designed per C2: real AD auth if the app was AD-based, else seam + dev stub with
+      AD marked `TODO (AD)`; roles AD-mappable either way.
 - [ ] Every endpoint has a complete contract; every screen maps to component(s) + route(s).
 - [ ] All required diagrams present, captioned, consistent with the prose.
 - [ ] No .NET patterns ported; design is idiomatic to the target.

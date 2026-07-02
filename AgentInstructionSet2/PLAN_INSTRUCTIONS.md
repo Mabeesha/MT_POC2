@@ -43,9 +43,10 @@ steps that confirm them:
   for JPA entities that map onto current tables with `ddl-auto=validate`. Include an early
   task to **stand up the DB connection and validate the mapping** before building features
   on top of it.
-- **C2 — Auth/Authz via Active Directory (placeholder).** Plan the **auth seam + dev stub**
-  early; mark AD wiring as a deferred `TODO (AD)` task. Don't plan a specific AD/LDAP
-  configuration.
+- **C2 — Auth/Authz approach follows the current app.** If the design specifies **real AD
+  auth** (the .NET app was AD-based), plan the AD authentication tasks per the design. If it
+  specifies an **auth seam + dev stub** (non-AD app), plan that early and mark AD wiring as a
+  deferred `TODO (AD)` task. Either way, don't plan a specific AD/LDAP configuration.
 - **C3 — Java follows the Google Java Style Guide.** Include a setup task to wire
   **google-java-format** (Spotless / `fmt-maven-plugin`) into the Maven build so formatting
   is automatic and the build fails on violations.
@@ -88,8 +89,8 @@ A sensible default order (adapt to the app):
    google-java-format plugin wired into the build (C3).
 2. **Data layer (C1)** — DB connection config, JPA entities mapped to existing tables,
    repositories, **schema validation against the real DB**.
-3. **Auth seam (C2)** — interface + dev stub, security config, role→AD-group model,
-   `TODO (AD)` placeholder, CORS.
+3. **Auth (C2)** — security config, role→AD-group model, CORS; then per the design either
+   **real AD auth** (AD-based app) or an **auth seam + dev stub** with `TODO (AD)` (non-AD app).
 4. **Backend features** — services, validation, controllers/endpoints per the API
    contract, error handling, tests.
 5. **Frontend foundation** — routing, shared services (HttpClient), guards, models.
@@ -170,7 +171,8 @@ Before finishing, verify:
 - [ ] Tasks are ordered by dependency; parallelizable work is marked.
 - [ ] Each task has scope, acceptance criteria, and a verification step.
 - [ ] An early task validates the **existing-DB mapping** (C1) before features depend on it.
-- [ ] The **auth seam + dev stub** (C2) is planned early with AD deferred as `TODO (AD)`.
+- [ ] Auth (C2) is planned early — **real AD auth** if the app was AD-based, else an auth
+      seam + dev stub with AD deferred as `TODO (AD)`.
 - [ ] Each phase has a verifiable exit criterion.
 - [ ] Risks and open questions are listed, not silently resolved.
 - [ ] An implementation agent could execute the plan top-to-bottom without re-deriving the

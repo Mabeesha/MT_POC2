@@ -54,11 +54,13 @@ These are fixed. Honor them; do not re-decide them.
   with **`spring.jpa.hibernate.ddl-auto=validate`** (never `create`/`update`). Treat the
   schema as a fixed contract; design the mapping around it, including any awkward bits
   (composite keys, triggers, stored procs, computed columns).
-- **C2 — Authentication/Authorization via Active Directory (placeholder).** Design a clean
-  **auth seam** that AD (LDAP / Windows Integrated Auth / AD-backed OIDC — TBD) will plug
-  into later. Map current roles/permissions to **AD-group-mappable** terms. Implement the
-  seam now (interface + a temporary/dev stub), mark the AD wiring as `TODO (AD)`, and do
-  **not** commit to a specific AD/LDAP configuration.
+- **C2 — Authentication/Authorization approach follows the current app.** If the
+  requirements state the .NET app **already uses Active Directory**, design **real AD-based
+  authentication** (LDAP / Windows Integrated Auth / AD-backed OIDC) as the actual mechanism.
+  If it does **not**, design a clean **auth seam** (interface + a temporary/dev stub) that AD
+  will plug into later, and mark the AD wiring as `TODO (AD)`. Either way, map current
+  roles/permissions to **AD-group-mappable** terms and do **not** commit to a specific
+  AD/LDAP configuration (host, base DN, etc.) — that is deployment config.
 - **C3 — Java follows the [Google Java Style Guide](https://google.github.io/styleguide/javaguidelines.html).**
   Backend Java conforms to it, enforced mechanically via **google-java-format** (Spotless or
   `fmt-maven-plugin`) wired into the Maven build. Record this in the §3 Technology &
@@ -176,10 +178,13 @@ prompt (or alongside the requirements file). Structure:
      actions, validation, states (loading/empty/error), and which API(s) it calls.
    - Services, guards, state approach, shared/reusable components.
 
-## 7. Authentication & Authorization  (honors C2 — AD placeholder)
-   - The auth seam (interface) and the temporary dev stub.
+## 7. Authentication & Authorization  (honors C2)
+   - The chosen path per C2: **real AD auth** (if the .NET app was AD-based) or an
+     **auth seam + dev stub** with AD deferred (if it was not).
+   - The auth seam (interface); for the non-AD path, the temporary dev stub and `TODO (AD)`
+     items; for the AD path, the AD integration design (bind/query flow, group→role mapping).
    - Role/permission → AD-group mapping table.
-   - Where authz is enforced (backend + frontend guard). `TODO (AD)` items.
+   - Where authz is enforced (backend + frontend guard).
 
 ## 8. Integrations & External Dependencies
    - Each external system: how it's called in the new design, contracts, failure handling.
@@ -224,8 +229,8 @@ Before finishing, verify:
       matrix.
 - [ ] The data model maps onto the **existing** schema with exact names, compatible with
       `ddl-auto=validate` (C1); mapping risks are flagged.
-- [ ] An auth seam exists with a dev stub and an AD-mappable role model; AD wiring is
-      marked `TODO (AD)` (C2).
+- [ ] Auth is designed per C2: **real AD auth** if the .NET app was AD-based, else an auth
+      seam + dev stub with AD marked `TODO (AD)`; role model is AD-mappable either way.
 - [ ] Every API endpoint has a complete contract (verb, path, params, bodies, statuses,
       auth).
 - [ ] Every requirements screen maps to named frontend component(s) and route(s).

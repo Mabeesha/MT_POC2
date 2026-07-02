@@ -44,9 +44,12 @@ conflict is material, flag it (§When You're Blocked) rather than guessing.
   the schema. If validation fails, fix the **mapping**, not the database. (A throwaway
   local DB for unit tests is fine, but the app must validate cleanly against the real
   schema.)
-- **C2 — Auth/Authz via Active Directory (placeholder).** Implement the **auth seam
-  (interface) + a dev stub** so the app runs and enforces roles now. Leave AD wiring as a
-  clearly marked **`TODO (AD)`**; do not hardcode AD/LDAP config or credentials.
+- **C2 — Auth/Authz approach follows the current app.** If the design specifies **real AD
+  auth** (the .NET app was AD-based), implement AD authentication per the design (taking
+  AD/LDAP connection details from config/env, never hardcoded). If it specifies an **auth
+  seam (interface) + dev stub**, implement that so the app runs and enforces roles now and
+  leave AD wiring as a clearly marked **`TODO (AD)`**. Never hardcode AD/LDAP config or
+  credentials in either case.
 - **C3 — Java follows the [Google Java Style Guide](https://google.github.io/styleguide/javaguidelines.html).**
   All backend Java code conforms to it. Enforce it mechanically by wiring
   **google-java-format** into the Maven build (e.g. the **Spotless** plugin or
@@ -113,8 +116,9 @@ Stop and report (rather than improvising) if:
   task needs.
 - The DB schema doesn't match what the design expects and you can't reconcile the mapping
   (C1) — the schema is fixed, so this needs a human/design decision.
-- A task requires AD specifics that are deferred (C2) — implement the stub and mark
-  `TODO (AD)`; don't invent AD config.
+- Auth (C2): on the **non-AD path**, a task requires AD specifics that are deferred —
+  implement the stub and mark `TODO (AD)`; on the **real-AD path**, AD/LDAP connection
+  details are unavailable — report and wait; don't invent AD config in either case.
 - An external dependency, credential, or access is unavailable.
 
 State the blocker, what you tried, and the options — let a human or the design/plan owner
@@ -129,7 +133,8 @@ For the overall implementation:
 - [ ] Backend builds and runs; frontend builds and serves; they integrate end to end.
 - [ ] The app starts and **validates cleanly against the existing database**
       (`ddl-auto=validate`), with entity/column names matching the real schema (C1).
-- [ ] An auth seam + dev stub enforces roles; AD wiring is marked `TODO (AD)` (C2).
+- [ ] Auth enforces roles per C2: **real AD auth** if the app was AD-based, else an auth
+      seam + dev stub with AD wiring marked `TODO (AD)`.
 - [ ] Every API endpoint matches the design contract (verb, path, params, bodies, statuses)
       and is exercised by a test.
 - [ ] Every requirements screen is implemented as the designed component(s)/route(s) with
