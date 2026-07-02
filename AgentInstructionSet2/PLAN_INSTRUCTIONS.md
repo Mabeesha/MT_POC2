@@ -21,8 +21,8 @@ re-design.
 
 1. **Primary input — the design document** (`DESIGN_<AppName>.md`). Your source of truth
    for *what* to build. Path is given in the prompt.
-2. **Secondary reference — the two requirements files**
-   (`BUSINESS_REQUIREMENTS_<AppName>.md` and `TECHNICAL_REQUIREMENTS_<AppName>.md`). Use them
+2. **Secondary reference — the three requirements files** (`BUSINESS_REQUIREMENTS_<AppName>.md`,
+   `FUNCTIONAL_REQUIREMENTS_<AppName>.md`, and `TECHNICAL_REQUIREMENTS_<AppName>.md`). Use them
    to understand intent and keep traceability (requirement IDs flow through to tasks).
 3. **Rarely — the original .NET codebase.** Only if the design points to it for a detail
    (e.g. exact schema for C1). Same guardrails as the design phase: do not port structure.

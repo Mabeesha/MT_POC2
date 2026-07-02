@@ -10,9 +10,10 @@ contracts (APIs, data mappings, component responsibilities) and **diagrams** ove
 do not carry over .NET/WinForms structure. Design idiomatic Angular + Spring Boot.
 
 ## Inputs (authority order: requirements → .NET code)
-1. **Requirements** — `BUSINESS_REQUIREMENTS_<App>.md` (features, rules, screens, roles)
-   and `TECHNICAL_REQUIREMENTS_<App>.md` (data model, security, integrations, config).
-   Together the source of truth; everything traces to their IDs.
+1. **Requirements** — `BUSINESS_REQUIREMENTS_<App>.md` (objectives, scope, rules, roles),
+   `FUNCTIONAL_REQUIREMENTS_<App>.md` (features, screens, validation, reports), and
+   `TECHNICAL_REQUIREMENTS_<App>.md` (data model, security, integrations, config). Together
+   the source of truth; everything traces to their IDs.
 2. **Original .NET code** — sparingly, only to confirm the **exact DB schema** (C1) or
    resolve a flagged `OPEN QUESTION:`/ambiguous value. **Guardrails:** don't mirror its
    structure/naming/UI; if the code reveals behavior the requirements missed, add it to

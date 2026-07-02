@@ -11,8 +11,9 @@ missing something material, **stop and report** — don't improvise.
 
 ## Inputs (authority order: design → requirements → .NET code)
 1. **Design** (`DESIGN_<App>.md`) — primary; the authoritative contracts.
-2. **Requirements** — `BUSINESS_REQUIREMENTS_<App>.md` (intent, business rules, exact
-   values) and `TECHNICAL_REQUIREMENTS_<App>.md` (data model, security, integrations).
+2. **Requirements** — `BUSINESS_REQUIREMENTS_<App>.md` (objectives, rules, roles),
+   `FUNCTIONAL_REQUIREMENTS_<App>.md` (features, screens, validation, exact values), and
+   `TECHNICAL_REQUIREMENTS_<App>.md` (data model, security, integrations).
 3. **Original .NET code** — only to confirm a detail the design defers to it (e.g. exact
    schema). Never copy its structure or patterns.
 

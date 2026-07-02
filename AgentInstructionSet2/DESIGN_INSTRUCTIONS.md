@@ -19,11 +19,12 @@ component responsibilities) and **visual diagrams** over prose.
 
 ## Inputs
 
-1. **Primary input — the two requirements files**:
-   `BUSINESS_REQUIREMENTS_<AppName>.md` (features, business rules, screens, roles, reports)
-   and `TECHNICAL_REQUIREMENTS_<AppName>.md` (data model, data access, security,
-   integrations, configuration). Together these are your **source of truth**; everything in
-   your design must trace back to their requirement IDs. Paths are given in the prompt.
+1. **Primary input — the three requirements files**:
+   `BUSINESS_REQUIREMENTS_<AppName>.md` (objectives, scope, business rules, roles),
+   `FUNCTIONAL_REQUIREMENTS_<AppName>.md` (features, screens, validation, reports), and
+   `TECHNICAL_REQUIREMENTS_<AppName>.md` (data model, data access, security, integrations,
+   configuration). Together these are your **source of truth**; everything in your design
+   must trace back to their requirement IDs. Paths are given in the prompt.
 
 2. **Secondary reference — the original .NET codebase** *(use sparingly, for
    disambiguation only)*. You **may** consult it to:
@@ -90,7 +91,7 @@ These are fixed. Honor them; do not re-decide them.
 
 ## Step 1 — Ingest & Reconcile
 
-1. Read **both** requirements files in full. Build a checklist of every requirement ID.
+1. Read **all three** requirements files in full. Build a checklist of every requirement ID.
 2. List the open questions/assumptions already flagged in it.
 3. Only where a design decision genuinely depends on it, consult the .NET codebase per the
    guardrails above — primarily to lock down the **exact DB schema** (C1).
@@ -149,7 +150,8 @@ prompt (or alongside the requirements file). Structure:
 
 ## 1. Overview & Scope
    - What is being built, the target stack, and a summary of key design decisions.
-   - In-scope / out-of-scope. Link to the source requirements files (business & technical).
+   - In-scope / out-of-scope. Link to the source requirements files (business, functional &
+     technical).
 
 ## 2. Architecture
    - System context/architecture diagram + narrative.

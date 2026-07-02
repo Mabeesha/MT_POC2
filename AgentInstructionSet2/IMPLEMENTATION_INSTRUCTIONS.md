@@ -23,9 +23,9 @@ build, run, and verify as you go.
    dependency order. Path is given in the prompt.
 2. **Reference — the design document** (`DESIGN_<AppName>.md`). The authoritative contracts:
    API endpoints, entity↔table mappings, component/route structure, auth seam.
-3. **Reference — the two requirements files** (`BUSINESS_REQUIREMENTS_<AppName>.md` and
-   `TECHNICAL_REQUIREMENTS_<AppName>.md`). For intent, business rules, exact values, and
-   acceptance behavior.
+3. **Reference — the three requirements files** (`BUSINESS_REQUIREMENTS_<AppName>.md`,
+   `FUNCTIONAL_REQUIREMENTS_<AppName>.md`, and `TECHNICAL_REQUIREMENTS_<AppName>.md`). For
+   intent, business rules, exact values, and acceptance behavior.
 4. **Rarely — the original .NET codebase.** Only to confirm an exact detail the design
    defers to it (e.g. precise schema for C1). Do **not** copy its structure or patterns.
 
