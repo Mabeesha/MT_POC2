@@ -88,7 +88,9 @@ A sensible default order (adapt to the app):
    (`ng new` + Angular Material), repo structure, run/build baseline, and the
    google-java-format plugin wired into the build (C3).
 2. **Data layer (C1)** — DB connection config, JPA entities mapped to existing tables,
-   repositories, **schema validation against the real DB**.
+   repositories, **schema validation against the real DB**. Gate later feature work on a
+   confirmed connection to the real DB (or an exact replica); if it's unavailable, that's a
+   blocker to raise, not to design around.
 3. **Auth (C2)** — security config, role→AD-group model, CORS; then per the design either
    **real AD auth** (AD-based app) or an **auth seam + dev stub** with `TODO (AD)` (non-AD app).
 4. **Backend features** — services, validation, controllers/endpoints per the API
@@ -96,11 +98,13 @@ A sensible default order (adapt to the app):
 5. **Frontend foundation** — routing, shared services (HttpClient), guards, models.
 6. **Frontend features** — screens/components per design, wired to the API, validation,
    loading/empty/error states, tests.
-7. **Cross-cutting & polish** — logging, config, exports/reports, non-functional items.
+7. **Cross-cutting & polish** — logging, config, exports/reports, i18n/localization &
+   accessibility (if in scope per the design), non-functional items.
 8. **End-to-end verification** — full-flow checks against acceptance criteria.
 
-Each phase should have an **exit criterion** ("H2/real DB connects and mapping validates",
-"all endpoints return expected shapes", "login → search → export works end to end").
+Each phase should have an **exit criterion** ("the backend connects to the real DB and JPA
+mapping validates via `ddl-auto=validate`", "all endpoints return expected shapes", "login →
+search → export works end to end").
 
 ## Step 3 — Write the Plan
 

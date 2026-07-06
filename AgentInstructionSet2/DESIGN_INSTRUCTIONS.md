@@ -61,8 +61,11 @@ These are fixed. Honor them; do not re-decide them.
   If it does **not**, design a clean **auth seam** (interface + a temporary/dev stub) that AD
   will plug into later, and mark the AD wiring as `TODO (AD)`. Either way, map current
   roles/permissions to **AD-group-mappable** terms and do **not** commit to a specific
-  AD/LDAP configuration (host, base DN, etc.) — that is deployment config.
-- **C3 — Java follows the [Google Java Style Guide](https://google.github.io/styleguide/javaguidelines.html).**
+  AD/LDAP configuration (host, base DN, etc.) — that is deployment config. Note that the
+  concrete AD *mechanism* may differ from the desktop app's: a browser SPA + stateless
+  backend usually cannot reuse Windows Integrated/Kerberos SSO directly, so prefer an LDAP
+  bind or AD-backed OIDC and keep the identity/group model stable even when the mechanism changes.
+- **C3 — Java follows the [Google Java Style Guide](https://google.github.io/styleguide/javaguide.html).**
   Backend Java conforms to it, enforced mechanically via **google-java-format** (Spotless or
   `fmt-maven-plugin`) wired into the Maven build. Record this in the §3 Technology &
   Dependencies section of the design. (Frontend stays idiomatic Angular.)
@@ -106,7 +109,9 @@ Decide and record (with brief rationale) at least:
 - **API style & conventions** — REST resource naming, pagination/filtering/sorting
   approach, error response format, versioning if needed.
 - **Data mapping** — each existing table → JPA entity; how relationships, keys, and
-  awkward types are mapped under `ddl-auto=validate`.
+  awkward types are mapped under `ddl-auto=validate`. For stored procedures / DB functions /
+  triggers, **decide explicitly** whether to call them (JPA `@Query(nativeQuery=true)` /
+  `@Procedure`) or reimplement the logic in a Java service, and record the choice with rationale.
 - **Auth seam** — where authentication/authorization is enforced; the interface AD will
   implement; the dev stub; how roles map to AD groups.
 - **Frontend structure** — module/standalone-component organization, routing, state
@@ -194,6 +199,9 @@ prompt (or alongside the requirements file). Structure:
 ## 9. Cross-Cutting Concerns
    - Config & Spring profiles, environment variables, CORS, logging/auditing,
      error format, i18n/localization, non-functional targets from requirements.
+   - **Testing strategy:** unit vs. integration boundaries, how business rules and validation
+     (VR-n) are covered, and how the DB is provided for tests that depend on
+     `ddl-auto=validate` (real schema / exact replica vs. throwaway local DB).
 
 ## 10. Key Flows (Sequence Diagrams)
    - Diagram + short walkthrough for each major flow.
@@ -238,6 +246,7 @@ Before finishing, verify:
 - [ ] Every requirements screen maps to named frontend component(s) and route(s).
 - [ ] All required diagrams are present, captioned, and consistent with the prose.
 - [ ] No .NET implementation patterns were ported; the design is idiomatic to the target.
+- [ ] A testing strategy is stated, including how the DB is provided for `validate`-dependent tests.
 - [ ] Open questions/assumptions/risks are listed rather than silently resolved.
 - [ ] An implementer could build the app from this document without guessing.
 

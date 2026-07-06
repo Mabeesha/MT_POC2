@@ -77,10 +77,15 @@ Regardless of the path:
 - Capture the **authorization model in AD-mappable terms**: list every role / permission /
   group and what each can do, so they map cleanly to **AD groups/claims**. Note where each
   check is enforced.
-- Surface the auth direction as a flag in §3 / §12; for the non-AD path, mark it `TODO (AD)`
-  and note any current concept (username, domain account, role table) that AD will replace.
+- Surface the auth direction in the Technical doc's Authentication & Security section (§4) and
+  its Open Questions (§10); for the non-AD path, mark it `TODO (AD)` and note any current
+  concept (username, domain account, role table) that AD will replace.
 - Do **not** propose a specific AD/LDAP configuration — just identify the seam where AD
   plugs in and what data (identity, groups) it must supply.
+
+> **Note:** the downstream stages carry a third constraint, **C3 (target code follows the
+> Google Java Style Guide)**. It governs *how the new backend is written*, not extraction, so
+> it does not apply here — it is intentionally absent from this stage, not dropped.
 
 ---
 
@@ -92,7 +97,8 @@ Regardless of the path:
    line, where practical) it was derived from, e.g. `Database/DatabaseHelper.cs:110`.
    Use the clickable `path:line` form.
 3. **Do not invent requirements.** If the code doesn't do it, don't write it down. If
-   intent is unclear, record it as an **open question** (see §7) rather than guessing.
+   intent is unclear, record it as an **open question** (in the relevant document's Open
+   Questions section) rather than guessing.
 4. **Flag, don't fix.** If you find bugs, dead code, security issues, or contradictions,
    record them in the appropriate section. Do not "correct" them in the requirements —
    the goal is to capture current behavior faithfully, then note concerns separately.
@@ -140,8 +146,10 @@ document it feeds — **[BUS]** → `BUSINESS_REQUIREMENTS`, **[FUNC]** → `FUN
 For every user-facing feature and significant background behavior, capture:
 - **What it does** and the **trigger** (button, menu, route, schedule, event).
 - **Inputs** (fields, parameters, files) and **outputs** (screens, files, records, calls).
-- **Business rules** — calculations, conditional logic, defaults, derived values. Extract
-  the actual rule (formula, threshold, ordering) from code, not a paraphrase.
+- **Business rules** — the conditional logic, defaults, and derived values a feature applies,
+  and *that* a calculation occurs and where it fits the flow. Capture each **exact
+  formula/threshold once** as a validation rule (2.4a) and cite it by ID here — don't restate
+  the formula in both places.
 - **Step-by-step flow** for non-trivial operations, including the happy path and branches.
 
 ### 2.2 [FUNC] UI / Screens
@@ -171,7 +179,8 @@ For every user-facing feature and significant background behavior, capture:
 - All validation rules (client-side and server-side), with exact constraints (lengths,
   ranges, regex patterns, allowed characters). (DB-level constraints that *enforce* these
   are recorded in the Data Model (2.3) — link them rather than duplicating.)
-- Calculations and algorithms — capture the formula and any rounding/precision rules.
+- Calculations and algorithms — capture the formula and any rounding/precision rules. This is
+  the **single home** for exact formulas; FR items (2.1) cite these by ID rather than repeating them.
 - Workflow / state machines: states, allowed transitions, and what triggers them.
 
 ### 2.4b [BUS] Roles & Permissions
@@ -191,8 +200,9 @@ For every user-facing feature and significant background behavior, capture:
 - Password handling (hashing scheme + work factor, if present), session/token management.
 - Authorization model (roles, claims, permission checks).
 - Sensitive data handling, encryption, secrets in config. **Flag** anything insecure
-  (plaintext passwords, secrets in source, SQL injection risk) under §7, but still
-  document current behavior.
+  (plaintext passwords, secrets in source, SQL injection risk) in the Technical doc's
+  "Security Concerns / Risks" list (§4) and Open Questions (§10), but still document
+  current behavior.
 
 ### 2.7 [TECH] Integrations & External Dependencies
 - Every external system: databases, REST/SOAP/WCF services, file imports/exports, email,
@@ -363,6 +373,8 @@ Before finishing, verify:
 - [ ] Validation rules include precise constraints (lengths, ranges, patterns).
 - [ ] Security-sensitive behavior is documented and risks are flagged.
 - [ ] Assumptions and open questions are listed rather than silently resolved.
+- [ ] Every internal `§`-reference points to a section that actually exists in the target
+      document it names.
 - [ ] The **Business** doc reads as *why*, the **Functional** doc as *what the system does*
       (both understandable without seeing the .NET code); the **Technical** doc captures the
       schema and mechanics accurately (C1/C2).

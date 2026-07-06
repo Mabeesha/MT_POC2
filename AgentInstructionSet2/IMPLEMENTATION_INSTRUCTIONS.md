@@ -50,7 +50,7 @@ conflict is material, flag it (§When You're Blocked) rather than guessing.
   seam (interface) + dev stub**, implement that so the app runs and enforces roles now and
   leave AD wiring as a clearly marked **`TODO (AD)`**. Never hardcode AD/LDAP config or
   credentials in either case.
-- **C3 — Java follows the [Google Java Style Guide](https://google.github.io/styleguide/javaguidelines.html).**
+- **C3 — Java follows the [Google Java Style Guide](https://google.github.io/styleguide/javaguide.html).**
   All backend Java code conforms to it. Enforce it mechanically by wiring
   **google-java-format** into the Maven build (e.g. the **Spotless** plugin or
   `fmt-maven-plugin`) during setup, so formatting is applied automatically and the build
@@ -139,6 +139,8 @@ For the overall implementation:
       and is exercised by a test.
 - [ ] Every requirements screen is implemented as the designed component(s)/route(s) with
       its validation and states.
+- [ ] i18n/localization and accessibility are implemented where the design marks them in scope
+      (or explicitly confirmed out of scope).
 - [ ] Automated tests pass and cover the key business rules and edge cases.
 - [ ] Backend Java is formatted to the Google Java Style Guide and the formatter check
       passes in the build (C3).
