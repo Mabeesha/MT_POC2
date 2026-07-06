@@ -27,7 +27,7 @@ missing something material, **stop and report** — don't improvise.
   (the .NET app was AD-based), implement AD authentication per the design. Otherwise build an
   auth seam (interface) + dev stub that enforces roles now and leave AD wiring as
   `TODO (AD)`. No AD/LDAP config or secrets in code either way.
-- **C3 — Java code follows the [Google Java Style Guide](https://google.github.io/styleguide/javaguidelines.html).**
+- **C3 — Java code follows the [Google Java Style Guide](https://google.github.io/styleguide/javaguide.html).**
   Enforce it mechanically with **google-java-format** wired into the build (e.g. the
   Spotless Maven plugin or `fmt-maven-plugin`) so formatting is automatic and the build
   fails on violations. (Frontend stays idiomatic Angular — Prettier/Angular style guide.)
@@ -44,7 +44,8 @@ requirement IDs it implements, and acceptance criteria. Default phase order:
 3. **Auth seam (C2)** — interface + dev stub, security config, role→AD-group model, CORS.
 4. **Backend features** — services, validation, endpoints per the API contract, tests.
 5. **Frontend** — routing, services/guards/models, then screens wired to the API.
-6. **Cross-cutting & e2e** — logging, config, exports, end-to-end checks.
+6. **Cross-cutting & e2e** — logging, config, exports, i18n/localization & accessibility (if
+   in scope per the design), end-to-end checks.
 
 Every task and phase must trace to design/requirement IDs and have a verifiable exit.
 
@@ -80,6 +81,8 @@ options. Record unresolved items as `OPEN QUESTION:` / `ASSUMPTION:`.
       with AD marked `TODO (AD)`.
 - [ ] Every endpoint matches the design contract and is covered by a test.
 - [ ] Every requirements screen is implemented with its validation and states.
+- [ ] i18n/localization and accessibility are implemented where the design marks them in scope
+      (or explicitly confirmed out of scope).
 - [ ] Tests pass; no secrets in source; CORS configured.
 - [ ] Java is formatted to the Google Java Style Guide and the formatter check passes (C3).
 - [ ] All requirement IDs satisfied; blockers/questions reported, not silently resolved.

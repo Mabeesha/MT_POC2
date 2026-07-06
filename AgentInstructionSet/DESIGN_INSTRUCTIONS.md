@@ -31,7 +31,10 @@ do not carry over .NET/WinForms structure. Design idiomatic Angular + Spring Boo
   **already uses Active Directory**, design **real AD-based authentication** (LDAP / Windows
   Integrated Auth / AD-backed OIDC) as the actual mechanism. If it does **not**, design a
   clean **auth seam** (interface + dev stub) AD will plug into later and mark AD wiring
-  `TODO (AD)`. Either way, map roles to **AD-group-mappable** terms.
+  `TODO (AD)`. Either way, map roles to **AD-group-mappable** terms. Note that a browser SPA
+  + stateless backend usually cannot reuse Windows Integrated/Kerberos SSO directly, so the
+  concrete AD *mechanism* may differ from the desktop app's — prefer an LDAP bind or AD-backed
+  OIDC and keep the identity/group model stable even when the mechanism changes.
 - **C3 — Java follows the Google Java Style Guide**, enforced via google-java-format
   (Spotless/`fmt-maven-plugin`) in the build. Record this in §3 Technology & Dependencies.
 
@@ -50,7 +53,10 @@ do not carry over .NET/WinForms structure. Design idiomatic Angular + Spring Boo
    consult the .NET code only to lock the DB schema (C1).
 2. **Decide the core design** (with rationale): architecture & layering (controller →
    service → repository, DTO vs entity); API conventions (resource naming, pagination/
-   filtering/sorting, error format); data mapping (each table → entity); the auth seam;
+   filtering/sorting, error format); data mapping (each table → entity, and for stored
+   procedures/functions/triggers **decide explicitly** whether to call them via
+   `@Query(nativeQuery=true)`/`@Procedure` or reimplement in a service, with rationale);
+   the auth seam;
    frontend structure (components, routing, services, screen→component mapping);
    cross-cutting concerns (profiles, CORS, logging, error handling, validation placement).
 3. **Write** the document per the template.
@@ -72,8 +78,10 @@ mapping risks · 5. Backend Design — component diagram + **REST API contract t
 validation/error handling · 6. Frontend Design — component & routing tree + per-screen
 (component, route, fields, actions, validation, states, APIs called) · 7. Auth/Authz (C2) —
 real AD auth if the app was AD-based else seam + dev stub with `TODO (AD)`, role→AD-group
-mapping table, enforcement points · 8.
-Integrations · 9. Cross-Cutting Concerns · 10. Key Flows (sequence diagrams) · 11. Build,
+mapping table, enforcement points · 8. Integrations · 9. Cross-Cutting Concerns (incl. a
+**testing strategy**: unit vs. integration boundaries, how business rules/validation are
+covered, and how the DB is provided for `ddl-auto=validate`-dependent tests) · 10. Key Flows
+(sequence diagrams) · 11. Build,
 Run & Deployment (incl. connecting to existing DB — config shape, not secrets) · 12. Open
 Questions, Risks & Assumptions · 13. Traceability Matrix (requirement ID → design element)
 · 14. Implementation Guidance (build order, module boundaries, sequencing).
@@ -91,6 +99,7 @@ traceability; entity/column names exactly as in the DB (C1); Mermaid for diagram
 - [ ] Every endpoint has a complete contract; every screen maps to component(s) + route(s).
 - [ ] All required diagrams present, captioned, consistent with the prose.
 - [ ] No .NET patterns ported; design is idiomatic to the target.
+- [ ] A testing strategy is stated, including how the DB is provided for `validate`-dependent tests.
 - [ ] Open questions/risks listed; an implementer could build from this without guessing.
 
 ## Additional Instructions

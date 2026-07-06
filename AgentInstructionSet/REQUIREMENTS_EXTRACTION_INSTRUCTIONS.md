@@ -28,10 +28,11 @@ honor**, not as a design to keep.)
 - **C1 — Existing DB is reused as-is** (no redesign, no migration). So the **Data Model
   section must be exact and authoritative**: real table/column names verbatim, types,
   sizes, nullability, defaults, keys, indexes, unique/check constraints, relationships, and
-  seed/reference data. Flag anything awkward for JPA mapping (composite keys, triggers,
-  stored procs, computed columns). Note where the schema lives; mark `OPEN QUESTION:` if
-  the code doesn't reveal the live schema. (The new backend runs `ddl-auto=validate`, so
-  accuracy here decides whether it starts.)
+  seed/reference data. Also capture the **DB engine and version** and the schema/owner name
+  (they drive JPA dialect selection). Flag anything awkward for JPA mapping (composite keys,
+  triggers, stored procs, computed columns). Note where the schema lives; mark
+  `OPEN QUESTION:` if the code doesn't reveal the live schema. (The new backend runs
+  `ddl-auto=validate`, so accuracy here decides whether it starts.)
 - **C2 — Auth approach depends on the current app.** Document current auth fully and
   **state explicitly whether the .NET app already uses Active Directory** (LDAP / Windows
   Integrated Auth / Kerberos / AD-backed OIDC). Capture the authorization model in
@@ -68,14 +69,17 @@ category feeds — **[BUS]** = Business, **[FUNC]** = Functional, **[TECH]** = T
   The business *meaning*; precise/field-level enforcement is captured functionally.
 - **[BUS] Roles & Permissions** — who can do what: every role/permission/group and the
   actions it gates (the AD-mappable model from C2, stated in business terms).
-- **[FUNC] Functional Requirements** — each feature: trigger, inputs, outputs, business
-  logic (exact formulas/logic), and step-by-step flow incl. branches. The detailed "what".
+- **[FUNC] Functional Requirements** — each feature: trigger, inputs, outputs, the business
+  logic it applies (noting *that* a calculation occurs and where it fits the flow — the exact
+  formula is captured once as a Validation Rule and cited by ID), and step-by-step flow incl.
+  branches. The detailed "what".
 - **[FUNC] UI / Screens** — every screen and its fields/controls/actions/navigation;
   field-level detail (labels, required/optional, dropdown values verbatim, defaults,
   formatting); meaningful behaviors (conditional show/enable, color coding and meaning,
   sort/page). Describe what the *user* sees and does, not the control types.
 - **[FUNC] Validation Rules** — all functional validation with precise constraints
-  (lengths, ranges, regex, allowed chars); calculations & rounding; workflow/state
+  (lengths, ranges, regex, allowed chars); calculations & rounding (**the single home** for
+  exact formulas — FR items cite these by ID rather than restating them); workflow/state
   transitions. (DB-level constraints that *enforce* these go in the Data Model — link them.)
 - **[FUNC] Reports & Exports** — content, columns, formatting, filters, triggers.
 - **[TECH] Technical Overview** — app type, framework version, key dependencies, layers and
