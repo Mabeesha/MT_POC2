@@ -18,8 +18,8 @@ missing something material, **stop and report** — don't improvise.
    schema). Never copy its structure or patterns.
 
 ## Constraints (must hold in the running app)
-- **Stack:** Angular + Angular Material; Java 17+ / Spring Boot, Maven, Spring Data JPA,
-  Spring Web, Spring Security.
+- **Stack:** Angular + Angular Material on Node 25.9.0; Java 21.0.6 / Spring Boot, Maven,
+  Spring Data JPA, Spring Web, Spring Security.
 - **C1 — Reuse the existing DB as-is.** Map JPA entities to current tables with exact
   names; run `ddl-auto=validate` (never create/update against the real DB). Fix the
   *mapping* if validation fails, never the schema. (A throwaway DB for unit tests is fine.)

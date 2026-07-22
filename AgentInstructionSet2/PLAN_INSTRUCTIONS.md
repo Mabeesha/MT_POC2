@@ -37,8 +37,8 @@ conservatively rather than inventing scope.
 Honor these; do not re-decide them. Plan tasks that respect them and add verification
 steps that confirm them:
 
-- **Target stack:** Angular + Angular Material, Java 17+ / Spring Boot, Maven, Spring Data
-  JPA, Spring Web, Spring Security.
+- **Target stack:** Angular + Angular Material on Node 25.9.0, Java 21.0.6 / Spring Boot,
+  Maven, Spring Data JPA, Spring Web, Spring Security.
 - **C1 — Reuse the existing database as-is.** No schema redesign or data migration. Plan
   for JPA entities that map onto current tables with `ddl-auto=validate`. Include an early
   task to **stand up the DB connection and validate the mapping** before building features

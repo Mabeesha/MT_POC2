@@ -21,8 +21,8 @@ do not carry over .NET/WinForms structure. Design idiomatic Angular + Spring Boo
    record gaps.
 
 ## Constraints (fixed)
-- **Stack:** Angular + Angular Material; Java 17+ / Spring Boot, Maven, Spring Data JPA,
-  Spring Web, Spring Security.
+- **Stack:** Angular + Angular Material on Node 25.9.0; Java 21.0.6 / Spring Boot, Maven,
+  Spring Data JPA, Spring Web, Spring Security.
 - **C1 — Reuse the existing DB as-is.** JPA entities map onto current tables with real
   names; backend runs `ddl-auto=validate` (never create/update). Treat the schema as a
   fixed contract; design the mapping around awkward bits (composite keys, triggers, stored

@@ -65,8 +65,8 @@ traceability.
 
 These are fixed. Honor them; do not re-decide them.
 
-- **Target stack:** Angular + Angular Material (frontend), Java 17+ / Spring Boot, Maven,
-  Spring Data JPA, Spring Web, Spring Security.
+- **Target stack:** Angular + Angular Material on Node 25.9.0 (frontend), Java 21.0.6 /
+  Spring Boot, Maven, Spring Data JPA, Spring Web, Spring Security.
 - **C1 — Reuse the existing database as-is.** No schema redesign, no data migration. JPA
   entities **map onto the current tables** using real table/column names. The backend runs
   with **`spring.jpa.hibernate.ddl-auto=validate`** (never `create`/`update`). Treat the

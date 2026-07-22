@@ -52,8 +52,8 @@ if the conflict is material, flag it (§When You're Blocked) rather than guessin
 
 ## Project-Wide Constraints (must hold in the running app)
 
-- **Target stack:** Angular + Angular Material, Java 17+ / Spring Boot, Maven, Spring Data
-  JPA, Spring Web, Spring Security.
+- **Target stack:** Angular + Angular Material on Node 25.9.0, Java 21.0.6 / Spring Boot,
+  Maven, Spring Data JPA, Spring Web, Spring Security.
 - **C1 — Reuse the existing database as-is.** Map JPA entities onto the **current tables
   with exact names**. Run with **`spring.jpa.hibernate.ddl-auto=validate`** — never
   `create`/`update`/`create-drop` against the real DB. Do not write migrations that alter
