@@ -37,9 +37,10 @@ stop.** Then the developer tests, the Review stage may audit, and the next run b
 6. **Reference — `PROJECT_CONTEXT.md`** — target stack, constraints by ID, CI/CD mode.
 7. **The codebase built so far** — the working baseline: extend it, keep it green.
 
-When sources conflict: **plan → LLD → HLD → requirements → PROJECT_CONTEXT** for *build*
-details; but a **constraint in PROJECT_CONTEXT is never violated** — if honoring it breaks a
-contract, that's a blocker, not a choice. Flag material conflicts (§When You're Blocked).
+When sources conflict, apply the authority ladder: a **constraint in `PROJECT_CONTEXT §4`
+always wins** — if honoring it breaks a design contract, that is a blocker, not a choice. For
+everything else: **plan → LLD → HLD → requirements → the rest of `PROJECT_CONTEXT`**. Flag
+material conflicts rather than picking a side (§When You're Blocked).
 
 ---
 

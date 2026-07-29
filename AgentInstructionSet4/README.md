@@ -22,6 +22,7 @@ Filenames are numbered by stage, so the folder listing reads as the running orde
 
 | File | Stage | What you do with it |
 |---|---|---|
+| `AGENTS_TEMPLATE.md` | *always* | **Copy to your project root as `AGENTS.md`.** Not a stage — it loads in every session |
 | `0_INTAKE_TEMPLATE.md` | — | **Start here.** Copy to `INTAKE.md` in your project and fill it in |
 | `0_PROJECT_CONTEXT_INSTRUCTIONS.md` | 0 | Resolves your intake → `PROJECT_CONTEXT.md` + `state.json` |
 | `1_REQUIREMENTS_EXTRACTION_INSTRUCTIONS.md` | 1 | Legacy app → three requirements docs |
@@ -33,6 +34,20 @@ Filenames are numbered by stage, so the folder listing reads as the running orde
 Stages 0–3 run **once each, in order**. Stages **4 and 5 alternate in a loop** — implement a
 phase, test it, review it, repeat — so the numbering marks position in the pipeline, not a
 one-way path. Any stage can be **rerun** when you're unhappy with its output.
+
+### Setup — do this once, before Stage 0
+
+```bash
+cp AgentInstructionSet4/AGENTS_TEMPLATE.md   ./AGENTS.md      # project root
+cp AgentInstructionSet4/0_INTAKE_TEMPLATE.md ./out/INTAKE.md  # then fill it in
+```
+
+**`AGENTS.md` matters more than it looks.** Every safety rule in the stage files only applies
+when you explicitly invoke that stage. The moment you just chat — *"add a department filter"*,
+*"fix this test"*, *"mark P-3 accepted"* — none of them are in context, and the pipeline's
+state can drift from reality without anyone noticing. `AGENTS.md` loads every session and
+closes that gap: it carries the invariants, the authority ladder, and a routing rule that
+catches edits made outside a formal stage run (see §Working Outside a Stage).
 
 ---
 
@@ -217,6 +232,29 @@ phase N+1 while phase N is merely `done`**.
 through a prompt note — rerun the Design stage, then rerun the Planner to re-slice the remaining
 phases. The Implement agent will itself recommend this when a change is too large to absorb —
 listen to it. Only future (non-`accepted`) phases get re-planned.
+
+---
+
+## Working Outside a Stage
+
+You won't always want to launch a formal stage run. You'll ask questions, chase a bug, or want
+one small thing changed. With `AGENTS.md` in place, the agent sorts those into three buckets —
+deciding **at the moment it's about to write**, not from how you phrased the question, because
+debugging so often turns into editing halfway through:
+
+| What you're doing | What happens |
+|---|---|
+| Asking, explaining, diagnosing, running tests | Just done. No gate. |
+| Changing **target code** | It asks whether to run it through Stage 4 (branch, tests, docs, state, PR) or make the change directly |
+| Changing a **pipeline document** (requirements / HLD / LLD / plan) | It declines and points you at the stage that owns it |
+
+**If you say "just do it directly", it still logs a `changeLog[]` entry** marked `out-of-band`.
+That's deliberate: skipping the process is your call, but skipping the *record* would leave the
+next Implement run reconciling against a baseline that moved without it knowing. One line in the
+log keeps the loop honest.
+
+The third bucket is the one that saves you most often — an agent casually editing the LLD breaks
+the contract that both Implement and Review judge everything against.
 
 ---
 
@@ -405,6 +443,7 @@ After the final phase is accepted:
 
 | Artifact | Created by | You edit? | Agent edits? |
 |---|---|---|---|
+| `AGENTS.md` (your copy) | you, from the template | tune it for your project | **never** |
 | `0_INTAKE_TEMPLATE.md` | the method | no — copy it | **never** |
 | `INTAKE.md` (your copy) | **you** | **yes — this is where answers live** | **never** (input only) |
 | `PROJECT_CONTEXT.md` | Stage 0 | to fix constraints/obligations (rerun) | on rerun |
@@ -428,6 +467,7 @@ the baseline moved.)*
 |---|---|---|
 | Source/target stack | Hardcoded (.NET → Angular/Spring) | **Declared in Stage 0**, stack-agnostic |
 | Constraints | Fixed C1/C2/C3 restated in every doc | **Project-supplied, by ID, with per-stage obligations** defined once in `PROJECT_CONTEXT.md`; stage files carry no constraint-specific rules |
+| Ad-hoc chat (outside a stage) | Ungoverned — rules only loaded when a stage was invoked | **`AGENTS.md`** carries invariants + a routing rule; out-of-band edits still get logged |
 | Cutover & coexistence | Not addressed (big-bang assumed) | **Load-bearing questions**; strangler-fig / parallel-run shape the design and phase slicing |
 | Integrations | Discovered ad hoc during extraction | Declared up front with **fixed vs. negotiable contracts** (`§8`) |
 | Parity stance | Implicit | **Explicit**: strict parity (bugs preserved + flagged) vs. improvements allowed |

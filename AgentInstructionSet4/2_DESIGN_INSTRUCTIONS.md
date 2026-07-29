@@ -31,8 +31,9 @@ The HLD explains *why and what*; the LLD nails *exactly what*. Together they are
 4. **Rarely — the legacy app** — only to disambiguate a detail the requirements defer to it
    (e.g. the exact schema when a DB-reuse constraint applies). Do not port its structure.
 
-When sources conflict: **PROJECT_CONTEXT (constraints) → requirements**. Flag material
-conflicts rather than guessing.
+When sources conflict, apply the authority ladder: a **constraint in `PROJECT_CONTEXT §4`
+always wins**; below that, the requirements govern. Flag material conflicts rather than
+guessing.
 
 ---
 
