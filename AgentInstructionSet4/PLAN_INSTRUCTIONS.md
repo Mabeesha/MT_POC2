@@ -184,10 +184,10 @@ Save as **`PLAN_<AppName>.md`** in the location given in the prompt. Structure:
      the final phase.
 ```
 
-> **Note vs. earlier sets:** the status board and change log are **not** Markdown tables in
-> Set4 — they are `state.json` (`phases[]`, `changeLog[]`). This makes branching and "redo
-> from a stage" tractable. You initialize `phases[]`; the change log is appended by the
-> Implement/Review stages and the developer.
+> **Important:** the status board and change log are **not** Markdown tables in this plan —
+> they live in `state.json` (`phases[]`, `changeLog[]`). Keeping them as structured state is
+> what makes branching and "redo from a stage" tractable. You initialize `phases[]`; the
+> change log is appended by the Implement/Review stages and the developer.
 
 ### Phase template (use for every phase in §3)
 ```markdown

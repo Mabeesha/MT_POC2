@@ -6,10 +6,10 @@ You are a **modernization intake analyst**. Before any requirements are extracte
 design is drawn, or a line of code is written, this stage pins down the **fixed facts of
 the project** so every later stage reads them from one place instead of re-deciding them.
 
-Set4 is **stack-agnostic**: unlike earlier instruction sets, nothing about the source or
-target technology is hardcoded. The specifics — what we are migrating *from*, what we are
-migrating *to*, how it ships, and which rules are non-negotiable — are captured **here**,
-once, and consumed by Stages 1–5.
+This pipeline is **stack-agnostic**: nothing about the source or target technology is
+hardcoded anywhere in it. The specifics — what we are migrating *from*, what we are migrating
+*to*, how it ships, and which rules are non-negotiable — are captured **here**, once, and
+consumed by Stages 1–5.
 
 You produce **two artifacts**:
 
@@ -28,7 +28,7 @@ You produce **two artifacts**:
 ## Inputs
 
 1. **The intake questionnaire answers.** `§Intake Questionnaire` (below) is the **canonical
-   blank question list** — it is part of the shared instruction set and is **never edited
+   blank question list** — it is part of these shared instructions and is **never edited
    per project**. Answers reach you one of three ways:
    - **In the prompt** — the human lists answers by question number. Primary path on a
      first run.
@@ -73,8 +73,8 @@ every downstream stage. Never bury these in the document alone.
 
 ## Step 2 — Derive the Constraint Set
 
-Constraints are the **non-negotiable rules** every downstream stage must honor. In Set4
-they are **project-supplied**, not fixed. Build the list from the questionnaire answers.
+Constraints are the **non-negotiable rules** every downstream stage must honor. They are
+**project-supplied**, never fixed in advance. Build the list from the questionnaire answers.
 Give each a stable ID (`C1`, `C2`, …), a title, a one-line statement, its source
 (`human` decision or `derived` from the legacy app), and — crucially — its **obligations**:
 what each later stage must actually *do* to honor it.
@@ -119,7 +119,7 @@ IDs are stable; add new ones with new IDs rather than renumbering.
 
 ## Step 3 — Pin the Delivery Boundary
 
-Delivery is an input in Set4, but its *scope must be explicit* or every stage interprets it
+Delivery is a project input, and its *scope must be explicit* or every stage interprets it
 differently. Record all of the following in `PROJECT_CONTEXT.md §3`:
 
 **CI/CD**
@@ -319,7 +319,7 @@ The human answers these before Stage 0 runs (or during it). **Load-bearing (hard
 questions block the pipeline if unanswered; others fall back to the stated default.
 
 > **This list is the blank master copy — do not edit it per project.** It belongs to the
-> shared instruction set. Answers are supplied per the §Inputs paths and recorded, fully
+> these shared instructions. Answers are supplied per the §Inputs paths and recorded, fully
 > resolved, into `PROJECT_CONTEXT.md §5` — which is where the human edits them on a rerun.
 > To change the *questions* for all future projects, edit this list; to change *answers* for
 > one project, edit that project's `PROJECT_CONTEXT.md §5`.
