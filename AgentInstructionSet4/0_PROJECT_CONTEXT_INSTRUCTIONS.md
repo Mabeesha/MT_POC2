@@ -30,7 +30,7 @@ You produce **two artifacts**:
 ## Inputs
 
 1. **The filled intake — `INTAKE.md` (primary source).** The human's copy of
-   `INTAKE_TEMPLATE.md` with the `Answer:` lines filled in; its path is given in the prompt.
+   `0_INTAKE_TEMPLATE.md` with the `Answer:` lines filled in; its path is given in the prompt.
    It is the authoritative statement of what they decided.
    - **It is an input, never an output — never write to it.** Your resolved version, with
      provenance, goes into `PROJECT_CONTEXT.md §5`.
@@ -56,7 +56,7 @@ You produce **two artifacts**:
 
 ## Step 1 — Resolve the Intake Questionnaire
 
-Read the human's filled `INTAKE.md` (falling back to `INTAKE_TEMPLATE.md` for the question
+Read the human's filled `INTAKE.md` (falling back to `0_INTAKE_TEMPLATE.md` for the question
 list and defaults if none was supplied). Work through **every** question — a question missing
 from their file is a blank, not an omission you may skip. For each:
 
@@ -322,7 +322,7 @@ Only ever **append** to `changeLog` and `reviews`; never rewrite history.
 
 ## Intake Questionnaire
 
-**The question list lives in `INTAKE_TEMPLATE.md`**, beside these instructions — it is the
+**The question list lives in `0_INTAKE_TEMPLATE.md`**, beside these instructions — it is the
 single source for what gets asked, including each question's default and whether it is
 load-bearing. It is not duplicated here; read it if you need the full set.
 
@@ -341,7 +341,7 @@ each is answered:
 | 12 | Cutover strategy | Architecture-defining; shapes design and phase slicing |
 | 11 | Current auth, and whether to keep it | Load-bearing **only where the app is access-controlled** |
 
-To change the *questions* for all future projects, edit `INTAKE_TEMPLATE.md`. To change
+To change the *questions* for all future projects, edit `0_INTAKE_TEMPLATE.md`. To change
 *answers* for one project, edit that project's `INTAKE.md` and rerun this stage.
 
 ---
@@ -380,7 +380,7 @@ actually changed.
   `OPEN QUESTION:`.
 - [ ] Every defaulted/inferred answer is listed explicitly in the hand-off report for the
   human to confirm or override — not left to be discovered in the document.
-- [ ] Neither `INTAKE.md` nor `INTAKE_TEMPLATE.md` was written to — the intake is an input.
+- [ ] Neither `INTAKE.md` nor `0_INTAKE_TEMPLATE.md` was written to — the intake is an input.
   §5 of `PROJECT_CONTEXT.md` holds the resolved answers with their provenance.
 
 ---

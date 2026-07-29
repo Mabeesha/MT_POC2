@@ -16,6 +16,26 @@ Project Context, and every later stage reads them from there.
 
 ---
 
+## The Files, in the Order You Use Them
+
+Filenames are numbered by stage, so the folder listing reads as the running order:
+
+| File | Stage | What you do with it |
+|---|---|---|
+| `0_INTAKE_TEMPLATE.md` | — | **Start here.** Copy to `INTAKE.md` in your project and fill it in |
+| `0_PROJECT_CONTEXT_INSTRUCTIONS.md` | 0 | Resolves your intake → `PROJECT_CONTEXT.md` + `state.json` |
+| `1_REQUIREMENTS_EXTRACTION_INSTRUCTIONS.md` | 1 | Legacy app → three requirements docs |
+| `2_DESIGN_INSTRUCTIONS.md` | 2 | Requirements → HLD + LLD |
+| `3_PLAN_INSTRUCTIONS.md` | 3 | Design → phased plan + `state.json phases[]` |
+| `4_PHASE_IMPLEMENTATION_INSTRUCTIONS.md` | 4 | **Run once per phase**, in a loop, until done |
+| `5_REVIEW_INSTRUCTIONS.md` | 5 | Independent audit; findings loop back to stage 4 |
+
+Stages 0–3 run **once each, in order**. Stages **4 and 5 alternate in a loop** — implement a
+phase, test it, review it, repeat — so the numbering marks position in the pipeline, not a
+one-way path. Any stage can be **rerun** when you're unhappy with its output.
+
+---
+
 ## The Pipeline at a Glance
 
 ```
@@ -94,9 +114,9 @@ of that — and nothing downstream needs changing.
 
 ## Stage-by-Stage
 
-### Stage 0 — Project Context  · `PROJECT_CONTEXT_INSTRUCTIONS.md`
-Answer the **Intake Questionnaire** — the blank list lives in that instruction file; you
-supply answers **in the prompt** (by question number). The agent resolves them: applying
+### Stage 0 — Project Context  · `0_PROJECT_CONTEXT_INSTRUCTIONS.md`
+Fill in the **Intake Questionnaire** — copy `0_INTAKE_TEMPLATE.md` to `INTAKE.md` in your
+project, answer what you know, and pass its path. The agent resolves your answers: applying
 stated **defaults** where you were silent, and **hard-stopping** on load-bearing blanks
 rather than guessing. It then derives the constraint set with obligations, pins the delivery
 and cutover boundary, writes `PROJECT_CONTEXT.md`, and initializes `state.json`.
@@ -111,7 +131,7 @@ can be safely defaulted.
 
 | | Where it lives | Who edits it |
 |---|---|---|
-| The **questions** (blank template) | `INTAKE_TEMPLATE.md` | only when changing the method for *all* projects |
+| The **questions** (blank template) | `0_INTAKE_TEMPLATE.md` | only when changing the method for *all* projects |
 | **Your answers** | `INTAKE.md` — your copy, in your project | **you.** This is the input, and where you revise |
 | The **resolved record** | `PROJECT_CONTEXT.md §5`, written by the agent | nobody — it's a record, with provenance |
 
@@ -121,41 +141,41 @@ once, fill in what you know, leave the rest blank. To change an answer later, **
 (including which answers the agent supplied for you).
 
 ```bash
-cp AgentInstructionSet4/INTAKE_TEMPLATE.md ./out/INTAKE.md   # then fill in the Answer: lines
+cp AgentInstructionSet4/0_INTAKE_TEMPLATE.md ./out/INTAKE.md   # then fill in the Answer: lines
 ```
 
 **Your job after:** read the report's *"Answered without you"* list — every question the agent
 defaulted or inferred. Those are decisions you never made, and they propagate into constraints
 and every downstream stage. Confirm or override them, then check the stacks and constraints.
 
-### Stage 1 — Requirements  · `REQUIREMENTS_EXTRACTION_INSTRUCTIONS.md`
+### Stage 1 — Requirements  · `1_REQUIREMENTS_EXTRACTION_INSTRUCTIONS.md`
 Produces the three requirements docs (business / functional / technical) from the legacy app,
 with depth steered by your constraints (exact data model if DB-reuse; full authz model if an
 auth constraint; NFRs expanded from the context).
 **Your job after:** skim all three; answer every `OPEN QUESTION:`/`ASSUMPTION:` — unresolved
 questions compound downstream.
 
-### Stage 2 — Design  · `DESIGN_INSTRUCTIONS.md`
+### Stage 2 — Design  · `2_DESIGN_INSTRUCTIONS.md`
 Produces the HLD (architecture + rationale) and LLD (exact contracts), designing *within* the
 target stack and constraints.
 **Your job after:** validate the big decisions (layering, API style, auth path, data handling)
 and clear the open questions. Changing a decision now costs a doc edit; changing it mid-build
 costs rework.
 
-### Stage 3 — Plan  · `PLAN_INSTRUCTIONS.md`
+### Stage 3 — Plan  · `3_PLAN_INSTRUCTIONS.md`
 Produces `PLAN_<App>.md` (phases P-1…P-N, each runnable & testable, with a developer test guide
 and **mechanical exit criteria**) and populates `state.json phases[]`.
 **Your job after:** sanity-check the slicing. Is P-1 genuinely small? Are the features you need
 to see early actually early? If not, rerun the planner now — it's cheapest before any code exists.
 
-### Stage 4 — Phase Implementation (the loop)  · `PHASE_IMPLEMENTATION_INSTRUCTIONS.md`
+### Stage 4 — Phase Implementation (the loop)  · `4_PHASE_IMPLEMENTATION_INSTRUCTIONS.md`
 One run builds one phase **or** one post-phase edit. Every run: **classifies** the work,
 **reconciles** changes from `state.json`, runs the **contradiction check**, implements on a
 **branch** with **small commits**, updates **tests + docs + state**, opens a **PR** with a
 descriptive body, marks the phase `done`, and **stops**. It never sets `accepted` (that's you)
 and never rolls into the next phase.
 
-### Stage 5 — Review / QA  · `REVIEW_INSTRUCTIONS.md`
+### Stage 5 — Review / QA  · `5_REVIEW_INSTRUCTIONS.md`
 An **independent** agent audits a phase (or the whole build) on four axes — requirements
 coverage, tests, security, static performance — plus constraint compliance. It returns
 **PASS** or **CHANGES REQUESTED**; actionable findings become `changeLog[]` entries the next
@@ -254,7 +274,7 @@ the agent then adds the new tree alongside it and still refuses to touch legacy 
 **Stage 0 — Project Context.** First copy the template and fill it in:
 
 ```bash
-cp AgentInstructionSet4/INTAKE_TEMPLATE.md ./out/INTAKE.md
+cp AgentInstructionSet4/0_INTAKE_TEMPLATE.md ./out/INTAKE.md
 ```
 
 Filled-in extract (leave anything you don't know blank — it defaults and gets reported back):
@@ -297,7 +317,7 @@ documents ./out/; target code this repo, new tree beside the legacy one.
 
 Then launch:
 
-> Follow `PROJECT_CONTEXT_INSTRUCTIONS.md`. Intake: `./out/INTAKE.md`. Legacy app: `./legacy/`.
+> Follow `0_PROJECT_CONTEXT_INSTRUCTIONS.md`. Intake: `./out/INTAKE.md`. Legacy app: `./legacy/`.
 > App name: `EmployeeSearch`. Write `PROJECT_CONTEXT.md` and `state.json` to `./out/`.
 
 *→ You get `PROJECT_CONTEXT.md` with constraints **C1** (DB reuse), **C2** (auth seam), **C3**
@@ -309,23 +329,23 @@ a missing obligation is a rule that silently won't be enforced.*
 
 **Stage 1 — Requirements:**
 
-> Follow `REQUIREMENTS_EXTRACTION_INSTRUCTIONS.md`. Context: `./out/PROJECT_CONTEXT.md`,
+> Follow `1_REQUIREMENTS_EXTRACTION_INSTRUCTIONS.md`. Context: `./out/PROJECT_CONTEXT.md`,
 > `./out/state.json`. Legacy app: `./legacy/`. Write the three requirements docs to `./out/`.
 > App name: `EmployeeSearch`.
 
 **Stage 2 — Design:**
 
-> Follow `DESIGN_INSTRUCTIONS.md`. Context + requirements in `./out/`. Legacy app `./legacy/`
+> Follow `2_DESIGN_INSTRUCTIONS.md`. Context + requirements in `./out/`. Legacy app `./legacy/`
 > for schema disambiguation only. Write the HLD and LLD to `./out/`.
 
 **Stage 3 — Plan:**
 
-> Follow `PLAN_INSTRUCTIONS.md`. Designs + requirements + context in `./out/`. Write
+> Follow `3_PLAN_INSTRUCTIONS.md`. Designs + requirements + context in `./out/`. Write
 > `PLAN_EmployeeSearch.md` to `./out/` and populate `state.json phases[]`. Prefer ~5 phases.
 
 **Stage 4 — Implement phase 1:**
 
-> Follow `PHASE_IMPLEMENTATION_INSTRUCTIONS.md`. Plan/designs/requirements/context/state in
+> Follow `4_PHASE_IMPLEMENTATION_INSTRUCTIONS.md`. Plan/designs/requirements/context/state in
 > `./out/`. **This is a phase.** Implement the next pending phase (P-1). Repo is this git
 > repo; branch and open a PR.
 
@@ -334,7 +354,7 @@ test guide, then set P-1 `accepted` in `state.json`.*
 
 **Stage 5 — Review P-1** (independent run):
 
-> Follow `REVIEW_INSTRUCTIONS.md`. Target: **P-1**. State/plan/design/requirements/context in
+> Follow `5_REVIEW_INSTRUCTIONS.md`. Target: **P-1**. State/plan/design/requirements/context in
 > `./out/`. Codebase is this repo. Write the review report to `./out/`.
 
 *→ PASS → launch P-2. CHANGES REQUESTED → the findings are now in `state.json changeLog[]`;
@@ -344,7 +364,7 @@ your next Implement run reconciles and fixes them before/at P-2.*
 
 You've accepted P-2 but realize you want a `department` filter on employee search:
 
-> Follow `PHASE_IMPLEMENTATION_INSTRUCTIONS.md`. **This is a post-phase edit, not a new phase.**
+> Follow `4_PHASE_IMPLEMENTATION_INSTRUCTIONS.md`. **This is a post-phase edit, not a new phase.**
 > Add a `department` filter to the employee-search endpoint and screen. Plan/designs/
 > requirements/context/state in `./out/`. Branch and open a PR.
 
@@ -358,7 +378,7 @@ impact and the options (change-on-top / branch-from-a-stage / redo) and waits fo
 no CI/CD, but you do have a pipeline). Edit **`INTAKE.md`** — Q15 becomes *"Respect existing:
 GitHub Actions"* — then:
 
-> Follow `PROJECT_CONTEXT_INSTRUCTIONS.md`. **Rerun.** Intake: `./out/INTAKE.md` (updated).
+> Follow `0_PROJECT_CONTEXT_INSTRUCTIONS.md`. **Rerun.** Intake: `./out/INTAKE.md` (updated).
 > Existing `./out/PROJECT_CONTEXT.md` and `./out/state.json`. Re-derive the constraints and
 > their obligations accordingly.
 
@@ -367,7 +387,7 @@ stale so they get reconciled or rerun.*
 
 **Re-slicing a plan** that front-loaded too much into P-1:
 
-> Follow `PLAN_INSTRUCTIONS.md`. **Rerun.** Existing plan + state in `./out/`. Additional
+> Follow `3_PLAN_INSTRUCTIONS.md`. **Rerun.** Existing plan + state in `./out/`. Additional
 > Instructions: P-1 is too big — split the frontend out into its own later phase; keep P-1 to
 > backend scaffold + DB validation + two endpoints only. Re-slice future phases only; leave any
 > accepted phases untouched.
@@ -376,7 +396,7 @@ stale so they get reconciled or rerun.*
 
 After the final phase is accepted:
 
-> Follow `REVIEW_INSTRUCTIONS.md`. Target: **whole-build**. All docs + state in `./out/`.
+> Follow `5_REVIEW_INSTRUCTIONS.md`. Target: **whole-build**. All docs + state in `./out/`.
 > Codebase is this repo. Emphasize security and requirements coverage. Write the report to `./out/`.
 
 ---
@@ -385,7 +405,7 @@ After the final phase is accepted:
 
 | Artifact | Created by | You edit? | Agent edits? |
 |---|---|---|---|
-| `INTAKE_TEMPLATE.md` | the method | no — copy it | **never** |
+| `0_INTAKE_TEMPLATE.md` | the method | no — copy it | **never** |
 | `INTAKE.md` (your copy) | **you** | **yes — this is where answers live** | **never** (input only) |
 | `PROJECT_CONTEXT.md` | Stage 0 | to fix constraints/obligations (rerun) | on rerun |
 | 3 requirements docs | Stage 1 | to answer open questions | rerun / no later |
