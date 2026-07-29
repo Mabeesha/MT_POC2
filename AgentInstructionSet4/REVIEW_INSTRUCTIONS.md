@@ -43,6 +43,10 @@ what's wrong, why it matters, and the requirement/design/constraint it violates.
   the plan's traceability) but aren't, or are only partially done.
 - Find **divergences** — behavior that doesn't match the FR/BR or the LLD contract (wrong
   endpoint shape, missing validation, altered business rule, wrong field mapping).
+- Check the **parity stance** (`PROJECT_CONTEXT §1`): under strict parity, an "improvement"
+  the implementer made on its own — a silently fixed legacy bug, a redesigned screen flow —
+  is a **finding**, not a bonus. Where improvements are permitted, check they were recorded.
+- Verify **fixed integration contracts** (`PROJECT_CONTEXT §8`) are conformed to exactly.
 - Confirm the phase's own **exit criteria** genuinely hold (don't take the `done` mark on faith).
 
 ### 2. Unit / automated tests
@@ -52,11 +56,11 @@ what's wrong, why it matters, and the requirement/design/constraint it violates.
 
 ### 3. Security vulnerabilities
 - Check for the usual classes relevant to the stack: injection (SQL/command/template), broken
-  authn/authz (does the auth model per the constraint actually enforce roles?), secrets in
-  source or logs, unsafe deserialization, missing input validation, sensitive-data exposure,
-  insecure defaults, vulnerable dependencies.
-- Verify the **auth constraint** is honored in practice (real IdP wired per design, or seam +
-  stub with the deferred `TODO` — not a bypass left open).
+  authn/authz (is the authorization model from the design actually enforced, not just declared?),
+  secrets in source or logs, unsafe deserialization, missing input validation, sensitive-data
+  exposure, insecure defaults, vulnerable dependencies.
+- Where a security-relevant constraint applies, verify it is honored **in practice**, not merely
+  present — e.g. an auth seam that still leaves a bypass open fails its obligation.
 
 ### 4. Performance issues *(static — no load testing)*
 - By inspection only: N+1 query patterns, unbounded result sets / missing pagination, work done
@@ -64,10 +68,18 @@ what's wrong, why it matters, and the requirement/design/constraint it violates.
   obvious algorithmic hot spots, resources not closed. Tie findings to the NFRs in
   `PROJECT_CONTEXT §6` / the Technical requirements where relevant.
 - Do **not** run benchmarks or load tests; reason from the code.
+- Compare against the **performance baseline** in `PROJECT_CONTEXT §10` where one exists. If
+  none was supplied, say so plainly in the report — a performance section with no baseline is
+  an opinion, and the reader should know that.
+- Where the legacy app remains a **live writer** to the same data store, check the code
+  actually tolerates concurrent access (transaction scope, optimistic locking, identity/
+  sequence handling) rather than assuming exclusive ownership.
 
-Also verify **constraint compliance** across the board (each `C#`): DB validate-only and exact
-mappings where DB-reuse applies; code-style/quality gate actually enforced in the build; no
-secrets committed; CI/CD obligations met per the context mode.
+Also verify **constraint compliance** across the board: for each `C#` in `PROJECT_CONTEXT §4`,
+check its **Review** obligation (or, absent one, that its *Implement* obligation actually holds
+in the built code) and report honored/violated with evidence. Regardless of declared
+constraints, always check that no secrets are committed and that CI/CD obligations match the
+context mode.
 
 ---
 

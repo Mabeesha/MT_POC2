@@ -45,36 +45,27 @@ belongs, cross-reference by ID — never duplicate prose.
 1. **`PROJECT_CONTEXT.md`** (Stage 0) — the authoritative source of stacks, constraints,
    CI/CD, and the answered questionnaire. Referenced throughout.
 2. **The legacy application** — path in the prompt. Your primary evidence.
-3. **`state.json`** — read `context.constraints`; update `stages.requirements.status`.
+3. **Other sources of truth** (`PROJECT_CONTEXT §9`) — existing automated tests, written
+   specs, runbooks, or available SMEs. **Use them alongside the code.** Legacy tests are
+   often the best behavioral specification available: they encode intent the code alone
+   doesn't reveal. Note where a test contradicts the code, and whether the suite passes.
+4. **`state.json`** — read `context.constraints`; update `stages.requirements.status`.
 
 ---
 
 ## Constraint-Driven Extraction
 
-The constraints in `PROJECT_CONTEXT.md` are project-specific, so **check which apply** and
-let them steer the depth of extraction. Common cases:
+The constraints are project-specific and defined in `PROJECT_CONTEXT.md §4`, each with its
+own **obligations** listed per stage. Read them and, for **every constraint that lists a
+*Requirements* obligation**, do exactly what that obligation says — it tells you what to
+capture, and how precisely (e.g. a data model captured verbatim, or an authorization model
+captured in portable terms). Cite the constraint ID in §8 Constraint Traceability.
 
-- **If a data/DB-reuse constraint exists** (target reuses the existing database): the
-  **Data Model section (§2.3) must be exact and authoritative** — capture **real table and
-  column names verbatim** (exact casing/spelling), data types, sizes, nullability,
-  defaults, primary/foreign keys, indexes, unique constraints. Note where the schema lives
-  and who owns it. Flag anything that will make ORM mapping awkward (composite keys,
-  triggers, stored procedures, computed columns, non-standard types). Record schema facts
-  as **constraints to honor**, not a design to improve. *If instead the target gets a fresh
-  schema, still capture the current model — but as the data's meaning to be re-modeled, and
-  say so.*
-- **If an auth constraint exists**: document the app's **current auth/authz behavior fully**
-  (§2.6) — it is the source of truth for what access rules exist — and capture the
-  **authorization model in portable terms** (every role / permission / group and what each
-  can do, so they map to the target's groups/claims). Note where each check is enforced.
-  State explicitly which auth path the context chose (keep real IdP vs. seam + deferred).
-  Do not propose a specific IdP/LDAP configuration — identify the seam and the identity/group
-  data it must supply.
-- **If a compliance/security constraint exists**: extract the current controls that satisfy
-  it and flag gaps as `OPEN QUESTION:`.
-
-> Constraints that govern *how the new code is written* (e.g. a code-style guide) apply to
-> later stages, not to extraction — note their existence, don't act on them here.
+A constraint with no *Requirements* obligation doesn't affect this stage — note its
+existence and move on; don't invent extra work for it. Do not re-derive constraint rules
+here: if a constraint should change how you extract something, that instruction belongs in
+its obligations in `PROJECT_CONTEXT §4` — if it's missing, raise it as an `OPEN QUESTION:`
+rather than guessing.
 
 ---
 
@@ -87,7 +78,11 @@ let them steer the depth of extraction. Common cases:
    unclear, record an **open question** rather than guessing.
 4. **Flag, don't fix.** Bugs, dead code, security issues, contradictions → record them;
    don't "correct" them into the requirements. Capture current behavior faithfully, note
-   concerns separately.
+   concerns separately. Under a **strict parity** stance (`PROJECT_CONTEXT §1`) this is
+   absolute — a legacy bug is a requirement until a human says otherwise, so record it as
+   observed behavior *plus* an `OPEN QUESTION:` asking whether to preserve it. Where
+   improvements are permitted, still record current behavior first, then note the proposed
+   improvement separately — never blend the two.
 5. **No code changes.** Read-only analysis of the source app.
 6. **Mark assumptions explicitly.** Anything inferred rather than observed → `ASSUMPTION:`.
 7. **Honor the context.** Don't re-decide stacks, constraints, or scope fixed in Stage 0.
@@ -145,9 +140,13 @@ Use the structures below. Keep IDs stable and cross-reference across the three.
 # Technical Requirements: <AppName>
 ## 1. Current Architecture            (as-built, per the current stack)
 ## 2. Data Layer
-   ### 2.3 Data Model                 (verbatim & exact IF a DB-reuse constraint applies)
+   ### 2.3 Data Model                 (depth per the applicable constraints' obligations)
    ### 2.6 Security & Access Mechanics
 ## 3. Integrations & External Systems
+   (Every external system found; reconcile with `PROJECT_CONTEXT §8` and **add rows for any
+   not listed there** — note direction, contract shape, and whether the contract is fixed.
+   An integration discovered here that the context didn't know about is a scope change:
+   raise it as an `OPEN QUESTION:`.)
 ## 4. Authentication & Security       (state which auth path per PROJECT_CONTEXT)
 ## 5. Background Processing / Jobs
 ## 6. Configuration
@@ -162,7 +161,10 @@ Use the structures below. Keep IDs stable and cross-reference across the three.
 `PROJECT_CONTEXT.md §6` seeds these; **deepen them here with evidence**. For each relevant
 category, state the requirement and cite what in the legacy app implies it:
 
-- **Performance** — response times, throughput, batch windows, data volumes observed.
+- **Performance** — response times, throughput, batch windows, data volumes observed. Record
+  any **measurable baseline** you can establish from the legacy app (timeouts configured,
+  page sizes, batch schedules, observed table sizes) into `PROJECT_CONTEXT §10` — without one,
+  the Review stage has no numeric bar and "no slower than today" is unenforceable.
 - **Scalability** — concurrency, expected growth, statefulness.
 - **Availability / reliability** — uptime expectations, failover, retries, idempotency.
 - **Security** — authn/authz strength, encryption, secrets, auditing, input handling.
@@ -192,8 +194,8 @@ changes in place (don't regenerate from scratch and lose curated content), incre
 - [ ] All three documents produced, split by altitude, cross-referenced by ID, no duplicated
       prose.
 - [ ] Every requirement cites evidence (`path:line`); nothing invented.
-- [ ] Constraint-driven depth applied (exact data model if DB-reuse; full authz model if an
-      auth constraint; etc.).
+- [ ] Every constraint's *Requirements* obligation (per `PROJECT_CONTEXT §4`) satisfied and
+      cited in §8; constraints without one noted as not applicable to this stage.
 - [ ] Non-functional requirements captured with evidence and open questions surfaced.
 - [ ] Assumptions marked `ASSUMPTION:`; unresolved items marked `OPEN QUESTION:`.
 - [ ] `stages.requirements.status` set to `complete` in `state.json`.

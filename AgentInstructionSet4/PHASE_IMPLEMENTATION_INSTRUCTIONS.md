@@ -45,16 +45,13 @@ contract, that's a blocker, not a choice. Flag material conflicts (§When You're
 
 ## Constraints (must hold in the running app)
 
-Honor **every** constraint in `PROJECT_CONTEXT.md §4`. Typical obligations:
-
-- **Data / DB reuse** — map onto the current tables with exact names; run the ORM
-  **validate-only** against the real DB (never mutate the schema). If validation fails, fix
-  the **mapping**, not the database.
-- **Auth** — implement the chosen path (real IdP from config/env, or seam + dev stub with a
-  clearly marked deferred `TODO`). Never hardcode IdP/LDAP config or credentials.
-- **Code style / quality gate** — conform to the named guide, enforced mechanically by the
-  formatter/linter in the build; run it before considering a task verified.
-- **No secrets in source** — connection/IdP config comes from env/profiles, never committed.
+Honor **every** constraint in `PROJECT_CONTEXT.md §4`, doing exactly what each one's
+**Implement** obligation states — that is the source for constraint-specific build rules;
+don't re-derive them here. Verify each relevant obligation before considering a task done
+(the plan's exit criteria should already encode them). Two obligations apply to *every*
+project regardless of the declared constraints: **no secrets in source** (connection/IdP
+config comes from env/profiles, never committed) and **don't mutate the reused database's
+schema** where a data-reuse constraint is in force.
 
 ---
 
@@ -130,9 +127,8 @@ Set the phase `in progress` in `state.json`. **Create a working branch** for the
    contracts and the constraints. Match the conventions of the code built in earlier phases.
 3. **Test** — add/adjust automated tests for the behavior; cover edge cases from the requirements.
 4. **Verify** — run the build and tests; exercise the acceptance criteria (call the endpoint,
-   render the screen). For data-layer tasks, confirm the app validates against the existing
-   schema where a DB-reuse constraint applies.
-5. **Confirm constraints** — the constraint obligations noted on the task still hold.
+   render the screen).
+5. **Confirm constraints** — every *Implement* obligation touching this task still holds.
 6. **Commit** this task as a small, self-describing commit (see §Git Discipline).
 7. **Move on** to the next unblocked task.
 
@@ -165,6 +161,10 @@ change with tests/docs/state updated, verify, open a PR, report, stop.)*
 ---
 
 ## Git Discipline *(always)*
+
+**Follow the repository conventions recorded in `PROJECT_CONTEXT §3`** (branch naming, PR
+target branch, commit conventions, required reviewers). The defaults below apply only where
+the context doesn't specify.
 
 - **Branch out** for every unit of work — never build on the main/integration branch directly.
   Name it for the work (e.g. `phase/P-3-frontend-foundation`, `edit/add-department-filter`).
@@ -219,11 +219,11 @@ Stop and report (rather than improvising) if:
   choose; recommend rerunning the Design or Requirements stage where their edits belong.
 - Honoring a constraint (`PROJECT_CONTEXT §4`) would break a design contract — the constraint
   wins; this needs a human/design decision.
-- The data-store schema doesn't match what the design expects and you can't reconcile the
-  mapping (where a DB-reuse constraint applies) — the schema is fixed.
-- Auth: on the deferred path, a task needs real-IdP specifics — implement the stub and mark the
-  `TODO`; on the real-IdP path, connection details are unavailable — report and wait. Never
-  invent IdP config.
+- You cannot satisfy a constraint's *Implement* obligation with what you have — the fixed thing
+  it protects can't be changed and the missing input isn't yours to invent (e.g. a reused
+  schema that doesn't match the mapping; deferred auth specifics; unavailable connection
+  config). Do what the obligation says for the blocked case if it specifies one; otherwise
+  report and wait.
 - The predecessor phase is `done` but not `accepted` and you weren't told to proceed anyway.
 - An external dependency, credential, or access is unavailable.
 
@@ -241,7 +241,8 @@ items as `OPEN QUESTION:` and assumptions as `ASSUMPTION:`.
 - [ ] Every task completed and verified, or explicitly reported as blocked.
 - [ ] App is in the promised runnable state; the developer test guide was walked and is accurate.
 - [ ] Previous phases' testable behavior still works (explicit replacements aside).
-- [ ] All constraints hold in the running app (DB validate, auth path, quality gate, no secrets).
+- [ ] Every constraint's *Implement* obligation (per `PROJECT_CONTEXT §4`) holds in the
+      running app; no secrets in source.
 - [ ] Contracts built this run match the LLD exactly and are exercised by tests.
 - [ ] **Branch created, small commits made, tests + docs + `state.json` updated, PR opened with
       a descriptive body (initial task / reasoning / outcome).**

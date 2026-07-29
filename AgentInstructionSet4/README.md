@@ -71,27 +71,56 @@ Keep it in git. Its history is how the Implement stage detects what changed betw
 ## Constraints — the heart of Set 4's generality
 
 There is no hardcoded "reuse the DB / use AD / Google Java Style" anymore. In Stage 0 **you
-declare the constraints that apply to your project**, each with a stable ID. Every later stage
-honors them **by ID**. Common ones you'll likely set:
+declare the constraints that apply to your project**, each with a stable ID — and, critically,
+each with its **per-stage obligations**: what Requirements, Design, Plan, Implement, and Review
+must actually *do* to honor it.
 
-- A **data/DB-reuse** constraint → the data model gets captured verbatim and the app validates
-  against the live schema.
-- An **auth** constraint → keep the real IdP, or use a seam + dev stub with the real one deferred.
-- A **code-style/quality-gate** constraint → a formatter/linter enforced in the build.
+That obligations list is the **single place constraint-specific rules live**. The stage
+instruction files contain no per-constraint rules at all; they generically say "honor each
+constraint per its stated obligation." So:
 
-But a green-field-ish target might declare none of these, or entirely different ones (compliance,
-data-residency). The instructions adapt to whatever you declare.
+- Adding a constraint (compliance, data-residency, anything) needs **no edit to any stage file**.
+- A constraint that lists no obligation for a stage simply doesn't affect that stage.
+- If a stage's behavior should change because of a constraint, that instruction belongs in the
+  constraint's obligations — not in the stage file.
+
+Example: a **data/DB-reuse** constraint might state *Requirements:* capture table/column names
+verbatim; *Design:* map entities onto existing tables, ORM validate-only; *Plan:* the first
+data-store phase must prove the mapping validates; *Implement:* fix the mapping, never the
+schema; *Review:* confirm validate-only and exact mappings. A green-field target declares none
+of that — and nothing downstream needs changing.
 
 ---
 
 ## Stage-by-Stage
 
 ### Stage 0 — Project Context  · `PROJECT_CONTEXT_INSTRUCTIONS.md`
-Fill in the **Intake Questionnaire** (in that file) and launch the agent. It resolves your
-answers — applying stated **defaults** or **hard-stopping** on load-bearing blanks (current
-stack, target stack, DB reuse, auth) — derives the constraint set, pins the CI/CD boundary,
-writes `PROJECT_CONTEXT.md`, and initializes `state.json`.
-**Your job after:** confirm the stacks, constraints, and any `ASSUMPTION:`/`OPEN QUESTION:`.
+Answer the **Intake Questionnaire** — the blank list lives in that instruction file; you
+supply answers **in the prompt** (by question number). The agent resolves them: applying
+stated **defaults** where you were silent, and **hard-stopping** on load-bearing blanks
+rather than guessing. It then derives the constraint set with obligations, pins the delivery
+and cutover boundary, writes `PROJECT_CONTEXT.md`, and initializes `state.json`.
+
+**The six load-bearing questions** (these block the pipeline until answered): current stack,
+target stack, DB reuse vs. new schema, **legacy coexistence**, **cutover strategy**, and auth
+(where the app is access-controlled). The last two are architecture-defining — a strangler-fig
+cutover or a still-live legacy writer changes the design and how phases are sliced, so neither
+can be safely defaulted.
+
+**How the questionnaire works** — this trips people up, so:
+
+| | Where it lives | Who edits it |
+|---|---|---|
+| The **questions** (blank master) | `PROJECT_CONTEXT_INSTRUCTIONS.md §Intake Questionnaire` | only when changing the method for *all* projects |
+| Your **answers** (resolved) | `PROJECT_CONTEXT.md §5`, written by the agent | you — this is where you revise intake |
+
+Never edit the questionnaire inside the instruction file for one project; it's shared across
+all of them. After the first run, **`PROJECT_CONTEXT.md §5` is the intake file** — to change an
+answer, edit it there and rerun Stage 0.
+
+**Your job after:** read the report's *"Answered without you"* list — every question the agent
+defaulted or inferred. Those are decisions you never made, and they propagate into constraints
+and every downstream stage. Confirm or override them, then check the stacks and constraints.
 
 ### Stage 1 — Requirements  · `REQUIREMENTS_EXTRACTION_INSTRUCTIONS.md`
 Produces the three requirements docs (business / functional / technical) from the legacy app,
@@ -209,16 +238,26 @@ values. Assume everything lives under `./out/` and the legacy app under `./legac
 > Follow `PROJECT_CONTEXT_INSTRUCTIONS.md`. Legacy app: `./legacy/`. App name: `EmployeeSearch`.
 > Write `PROJECT_CONTEXT.md` and `state.json` to `./out/`.
 > Questionnaire answers:
-> 1. Current stack: **.NET WinForms + SQL Server** (confirm from the app).
-> 2. Target stack: **Angular (Node 25.9.0) + Java 21 / Spring Boot, Maven, Spring Data JPA**.
-> 4. Data: **reuse the existing database as-is** — no schema changes, no migration.
-> 6. Auth: the app uses a local users table → **auth seam + dev stub, real AD deferred**.
-> 7. CI/CD: **none yet** (local build/test only).
-> 9. Quality gate: **Google Java Style Guide, enforced by google-java-format in Maven**.
-> 10. NFR priorities: security, correctness, performance.
+> 1. Driver: **the .NET desktop platform is end-of-life**; no hard deadline.
+> 3. Parity: **strict** — reproduce current behavior; flag bugs, don't fix them.
+> 4. Current stack: **.NET WinForms + SQL Server** (confirm from the app).
+> 5. Target stack: **Angular (Node 25.9.0) + Java 21 / Spring Boot, Maven, Spring Data JPA**.
+> 7. Data: **reuse the existing database as-is** — no schema changes, no migration.
+> 9. Coexistence: the WinForms app is **retired at cutover** — no concurrent writers.
+> 11. Auth: the app uses a local users table → **auth seam + dev stub, real AD deferred**.
+> 12. Cutover: **big-bang**.
+> 14. Environments: local dev only; a **restored copy of prod data** is available locally.
+> 15. CI/CD: **none yet** (local build/test only).
+> 18. Other sources: **no existing tests**; one SME available for business rules.
+> 19. Quality gate: **Google Java Style Guide, enforced by google-java-format in Maven**.
+> 20. NFR priorities: **security, maintainability, performance**.
 
-*→ You get `PROJECT_CONTEXT.md` (with constraints C1 = DB reuse, C2 = auth seam, C3 = Java
-style) and an initialized `state.json`. Confirm the constraints look right.*
+*→ You get `PROJECT_CONTEXT.md` with constraints **C1** (DB reuse), **C2** (auth seam), **C3**
+(Java style) — each carrying its own per-stage obligations, e.g. C1 → *Requirements:* capture
+the schema verbatim; *Plan:* validate the mapping in the first data-store phase; *Implement:*
+run validate-only, fix mappings not the DB — plus an initialized `state.json`.*
+**Review these obligations carefully** — they are what every later stage actually executes, so
+a missing obligation is a rule that silently won't be enforced.*
 
 **Stage 1 — Requirements:**
 
@@ -267,7 +306,17 @@ impact and the options (change-on-top / branch-from-a-stage / redo) and waits fo
 
 ### Example C — Rerunning a stage you're unhappy with
 
-The plan front-loaded too much into P-1:
+**Revising your intake answers** (Stage 0 defaulted something you care about — say it assumed
+no CI/CD, but you do have a pipeline). Edit `PROJECT_CONTEXT.md §5` directly, then:
+
+> Follow `PROJECT_CONTEXT_INSTRUCTIONS.md`. **Rerun.** Existing `./out/PROJECT_CONTEXT.md`
+> and `./out/state.json` — I've updated my answers in §5 (Q7 is now "respect existing:
+> GitHub Actions"). Re-derive the constraints and their obligations accordingly.
+
+*→ If later stages already ran, the agent logs a `changeLog` entry naming which docs are now
+stale so they get reconciled or rerun.*
+
+**Re-slicing a plan** that front-loaded too much into P-1:
 
 > Follow `PLAN_INSTRUCTIONS.md`. **Rerun.** Existing plan + state in `./out/`. Additional
 > Instructions: P-1 is too big — split the frontend out into its own later phase; keep P-1 to
@@ -287,7 +336,7 @@ After the final phase is accepted:
 
 | Artifact | Created by | You edit? | Agent edits? |
 |---|---|---|---|
-| `PROJECT_CONTEXT.md` | Stage 0 | to fix stacks/constraints (rerun) | on rerun |
+| `PROJECT_CONTEXT.md` | Stage 0 | to fix stacks/constraints/obligations (rerun) | on rerun |
 | 3 requirements docs | Stage 1 | to answer open questions | rerun / no later |
 | HLD / LLD | Stage 2 | **yes — design changes** | rerun only |
 | `PLAN_<App>.md` (phase content) | Stage 3 | future phases only | reconciliation edits |
@@ -307,7 +356,10 @@ the baseline moved.)*
 | Concern | Set 3 | Set 4 |
 |---|---|---|
 | Source/target stack | Hardcoded (.NET → Angular/Spring) | **Declared in Stage 0**, stack-agnostic |
-| Constraints | Fixed C1/C2/C3 in every doc | **Project-supplied, by ID**, in `PROJECT_CONTEXT.md` |
+| Constraints | Fixed C1/C2/C3 restated in every doc | **Project-supplied, by ID, with per-stage obligations** defined once in `PROJECT_CONTEXT.md`; stage files carry no constraint-specific rules |
+| Cutover & coexistence | Not addressed (big-bang assumed) | **Load-bearing questions**; strangler-fig / parallel-run shape the design and phase slicing |
+| Integrations | Discovered ad hoc during extraction | Declared up front with **fixed vs. negotiable contracts** (`§8`) |
+| Parity stance | Implicit | **Explicit**: strict parity (bugs preserved + flagged) vs. improvements allowed |
 | CI/CD | Not addressed | **Explicit boundary** (respect / generate / none) |
 | Load-bearing questions | Surfaced as open questions | **Questionnaire with defaults-or-hard-stop** |
 | Status board & change log | Markdown tables in the plan | **`state.json`** (enables branching / lineage) |

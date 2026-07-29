@@ -42,17 +42,15 @@ conservatively rather than inventing scope.
 
 ## Constraints (carried forward, by ID)
 
-Read `PROJECT_CONTEXT.md §4` and shape phases that respect **each** constraint, adding
-verification steps that confirm them. Typical implications:
+Read `PROJECT_CONTEXT.md §4` and shape phases that respect **each** constraint, following
+its stated **Plan obligation** — which typically fixes *when* something must happen (e.g. an
+early validation step, or standing up a quality gate in the scaffold phase) — and add exit
+criteria that confirm it. Don't re-derive constraint rules here; the obligations are the
+source. A constraint with no *Plan* obligation simply doesn't shape the phasing.
 
-- **Data / DB reuse** — the **first phase that touches the data store must prove the mapping
-  validates against the real database** (validate-only) before later phases build on it.
-- **Auth** — schedule the chosen auth path early (real IdP per the design, or seam + dev stub
-  with the real IdP deferred). Don't plan a specific IdP/LDAP configuration.
-- **Code style / quality gate** — the phase that scaffolds the codebase wires the
-  formatter/linter into the build so the gate is automatic from the start.
-- **CI/CD = generate** — include a phase (or tasks) that stand up the pipeline. **respect** —
-  keep each phase buildable/testable by the existing pipeline. **none** — local only.
+CI/CD follows `PROJECT_CONTEXT §3`: **generate** → include a phase (or tasks) that stand up
+the pipeline; **respect** → keep every phase buildable/testable by the existing pipeline;
+**none** → local only.
 
 ---
 
@@ -116,6 +114,25 @@ Decide how to slice, record the rationale in §1. Two archetypes (mix as appropr
 - **Layered increments** — early phases stand up one layer testably (backend + API explorer
   first; frontend against the real API next), later phases add features across both. Best
   when the data mapping is the dominant risk (a DB-reuse constraint usually makes it so).
+
+**The cutover strategy (`PROJECT_CONTEXT §3`) constrains this choice — check it first:**
+
+- **Big-bang** — the target replaces the legacy app at once. Either archetype works; slice on
+  risk as described below.
+- **Strangler fig** — legacy and target run side by side with traffic routed incrementally.
+  **Vertical slices are effectively mandatory**, sliced by *route or feature* so each phase
+  can take over a real slice of live traffic. An early phase must stand up the **routing
+  facade** and prove one trivial route flows through it before any feature migrates. Each
+  later phase's test guide should cover both the migrated route *and* the still-legacy
+  routes continuing to work.
+- **Parallel run** — both systems process the same work and outputs are compared. Plan a
+  **reconciliation/comparison harness** as an early deliverable, and give later phases exit
+  criteria expressed as *output equivalence with the legacy system*, not just "the endpoint
+  responds".
+
+Where the legacy app remains a **live writer to the same data store**, every phase that
+touches data must be planned and tested with a second concurrent writer in mind — say so in
+the phase's test guide rather than assuming exclusive access.
 
 Put the **riskiest, most foundational work earliest** (data mapping validation, auth seam,
 the trickiest business rule); defer polish (reports, exports, i18n, edge screens). Aim for
@@ -211,7 +228,8 @@ Save as **`PLAN_<AppName>.md`** in the location given in the prompt. Structure:
 ### Conventions
 - Phase IDs `P-1`, `P-2`, …; task IDs `P-N.T-M` — stable, referenced in dependencies,
   traceability, and `state.json`.
-- Keep data entity/column names exactly as in the design/DB where a DB-reuse constraint applies.
+- Where a constraint's obligation fixes naming or values, reproduce them exactly as the design
+  records them.
 - Prefix unresolved items `OPEN QUESTION:`, inferred ones `ASSUMPTION:`.
 - Diagrams in Mermaid, fenced, with captions.
 
@@ -233,9 +251,12 @@ ones. Increment `stages.plan.rerunCount` and add a `changeLog` entry noting the 
 - [ ] Every phase ends runnable and manually testable, with a concrete developer test guide.
 - [ ] Every design element and requirement ID maps to a phase/task (matrix complete).
 - [ ] Phases build monotonically — no phase breaks a previous one, except marked replacements.
-- [ ] The first data-store phase validates the mapping where a DB-reuse constraint applies.
-- [ ] Auth lands early per the chosen path; the quality gate is wired in the scaffold phase;
-      CI/CD handled per the context mode.
+- [ ] Every constraint's *Plan* obligation (per `PROJECT_CONTEXT §4`) is reflected in the
+      phasing and confirmed by a phase's exit criteria; CI/CD handled per the context mode.
+- [ ] The phase strategy is consistent with the **cutover strategy** — routing facade early
+      for strangler fig, reconciliation harness early for a parallel run.
+- [ ] Where the legacy app stays a live writer, data-touching phases are planned and tested
+      for concurrent access.
 - [ ] **Exit criteria are mechanical/falsifiable** for every phase (the agent gate has teeth).
 - [ ] Each task has scope, acceptance criteria, and a verification step.
 - [ ] `state.json phases[]` is populated (all `pending`, `branchedFrom: null`).

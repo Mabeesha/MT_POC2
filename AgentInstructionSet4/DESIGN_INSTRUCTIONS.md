@@ -39,24 +39,27 @@ conflicts rather than guessing.
 ## Designing Within the Constraints
 
 For **each constraint** in `PROJECT_CONTEXT.md §4`, the design must show how it is honored,
-in an explicit HLD subsection. Common cases:
+in an explicit HLD subsection (§8 Constraint Satisfaction). Do what each constraint's
+**Design obligation** states — that is the single source for constraint-specific design
+rules; don't re-derive them here. Where an obligation shapes a concrete contract (a data
+mapping, an auth seam, a pipeline stage), reflect it in the LLD too, exactly as the
+obligation requires. A constraint with no *Design* obligation still gets a one-line "not
+design-affecting" note in §8 so coverage is visible. If an obligation is missing or unclear
+where you expected one, raise it in §Open Questions rather than inventing the rule.
 
-- **Data / DB reuse** — entities map onto the existing tables with **exact names**; the ORM
-  runs in a **validate-only** mode (no schema mutation) against the real database. The LLD's
-  entity↔table/column mapping table is authoritative and must match the requirements' data
-  model verbatim. Call out awkward mappings (composite keys, stored procedures, computed
-  columns) and how the design handles them. *If instead a fresh schema is in scope, design
-  it here and mark the migration path.*
-- **Auth** — implement the path the context chose: real IdP/AD auth (take connection details
-  from config/env, never hardcoded), **or** an auth **seam (interface) + dev stub** with the
-  real IdP deferred as a clearly marked `TODO`. Either way, specify the seam, the identity
-  and group/claim data flowing through it, and where each authorization check sits. Don't
-  design a specific IdP/LDAP configuration.
-- **Code style / quality gate** — name the guide and the mechanical enforcement (formatter/
-  linter in the build), and make the design assume it is on.
-- **CI/CD** — if the context's mode is **generate**, design the pipeline stages and where
-  the quality gate runs; if **respect**, note the interface the app must present to the
-  existing pipeline; if **none**, say local build/test only.
+CI/CD follows `PROJECT_CONTEXT §3`: **generate** → design the pipeline stages and where the
+quality gate runs; **respect** → note the interface the app must present to the existing
+pipeline; **none** → local build/test only.
+
+**Cutover is architecture, not rollout.** `PROJECT_CONTEXT §3` names the strategy; design its
+mechanics in HLD §9: a **strangler fig** needs a routing facade and a story for shared
+session/auth state across both systems; a **parallel run** needs a reconciliation harness and
+a defined comparison boundary; **big-bang** needs neither. If the legacy app remains a live
+writer to the same data store, the data design must address concurrency explicitly — treat it
+as a first-class design problem, not an operational footnote.
+
+**Integrations** with a **fixed** contract (`PROJECT_CONTEXT §8`) are binding: the target
+conforms exactly. Specify each in the LLD as precisely as an internal API.
 
 ---
 
@@ -115,7 +118,12 @@ matches exactly.
 ## 6. Cross-Cutting Concerns           (errors, config, logging, observability, i18n)
 ## 7. Non-Functional Design            (how the architecture meets each NFR)
 ## 8. Constraint Satisfaction          (one subsection per C# → how it's honored)
-## 9. CI/CD                            (per PROJECT_CONTEXT mode)
+## 9. Delivery, Cutover & Coexistence  (per PROJECT_CONTEXT §3)
+   - CI/CD per the context mode; deployment target.
+   - The cutover mechanics: routing facade for strangler fig, reconciliation harness for a
+     parallel run, or a straight switch for big-bang.
+   - If the legacy app stays a live writer on the same data store: isolation levels, locking,
+     shared identity/sequence handling, and how both systems tolerate each other's writes.
 ## 10. Requirement → Design Traceability
 ## 11. Open Questions & Assumptions
 ```
@@ -136,7 +144,8 @@ matches exactly.
 
 ### Conventions
 - Decision IDs `DD-#`; keep stable and reference them from the plan.
-- Keep data names **exactly** as in the requirements/DB when a DB-reuse constraint applies.
+- Where a constraint's obligation fixes naming or values, reproduce them **exactly** as the
+  requirements record them — don't normalize or "improve" them.
 - Prefix unresolved items `OPEN QUESTION:`, inferred ones `ASSUMPTION:`.
 - Diagrams in Mermaid, fenced as ```mermaid, with captions.
 
@@ -159,8 +168,8 @@ downstream artifacts (plan, built phases) are now stale — so they get reconcil
 - [ ] Every requirement (BR/FR/technical) and every constraint is covered by a design element.
 - [ ] HLD carries rationale for each significant decision; LLD contracts are exact and
       buildable.
-- [ ] Data mappings match the requirements verbatim where a DB-reuse constraint applies.
-- [ ] The chosen auth path is specified as a seam with identity/claims contract.
+- [ ] Every constraint's *Design* obligation (per `PROJECT_CONTEXT §4`) is honored and shown
+      in §8; constraints without one are noted as not design-affecting.
 - [ ] Non-functional requirements are each addressed in the HLD.
 - [ ] Full traceability both directions (requirement ↔ design element).
 - [ ] Open questions surfaced, not silently resolved; assumptions marked.
