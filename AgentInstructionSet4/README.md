@@ -111,12 +111,18 @@ can be safely defaulted.
 
 | | Where it lives | Who edits it |
 |---|---|---|
-| The **questions** (blank master) | `PROJECT_CONTEXT_INSTRUCTIONS.md §Intake Questionnaire` | only when changing the method for *all* projects |
-| Your **answers** (resolved) | `PROJECT_CONTEXT.md §5`, written by the agent | you — this is where you revise intake |
+| The **questions** (blank template) | `INTAKE_TEMPLATE.md` | only when changing the method for *all* projects |
+| **Your answers** | `INTAKE.md` — your copy, in your project | **you.** This is the input, and where you revise |
+| The **resolved record** | `PROJECT_CONTEXT.md §5`, written by the agent | nobody — it's a record, with provenance |
 
-Never edit the questionnaire inside the instruction file for one project; it's shared across
-all of them. After the first run, **`PROJECT_CONTEXT.md §5` is the intake file** — to change an
-answer, edit it there and rerun Stage 0.
+The flow is one-way: **`INTAKE.md` → agent → `PROJECT_CONTEXT.md §5`**. Copy the template
+once, fill in what you know, leave the rest blank. To change an answer later, **edit
+`INTAKE.md` and rerun Stage 0** — don't edit §5, which records what the *last* run decided
+(including which answers the agent supplied for you).
+
+```bash
+cp AgentInstructionSet4/INTAKE_TEMPLATE.md ./out/INTAKE.md   # then fill in the Answer: lines
+```
 
 **Your job after:** read the report's *"Answered without you"* list — every question the agent
 defaulted or inferred. Those are decisions you never made, and they propagate into constraints
@@ -245,26 +251,54 @@ the agent then adds the new tree alongside it and still refuses to touch legacy 
 
 ### Example A — A .NET → Angular + Spring Boot migration that reuses the database
 
-**Stage 0 — Project Context** (fill the questionnaire in the prompt):
+**Stage 0 — Project Context.** First copy the template and fill it in:
 
-> Follow `PROJECT_CONTEXT_INSTRUCTIONS.md`. Legacy app: `./legacy/`. App name: `EmployeeSearch`.
-> Write `PROJECT_CONTEXT.md` and `state.json` to `./out/`.
-> Questionnaire answers:
-> 1. Driver: **the .NET desktop platform is end-of-life**; no hard deadline.
-> 3. Parity: **strict** — reproduce current behavior; flag bugs, don't fix them.
-> 4. Current stack: **.NET WinForms + SQL Server** (confirm from the app).
-> 5. Target stack: **Angular (Node 25.9.0) + Java 21 / Spring Boot, Maven, Spring Data JPA**.
-> 7. Data: **reuse the existing database as-is** — no schema changes, no migration.
-> 9. Coexistence: the WinForms app is **retired at cutover** — no concurrent writers.
-> 11. Auth: the app uses a local users table → **auth seam + dev stub, real AD deferred**.
-> 12. Cutover: **big-bang**.
-> 14. Environments: local dev only; a **restored copy of prod data** is available locally.
-> 15. CI/CD: **none yet** (local build/test only).
-> 16. Locations: legacy source `./legacy/` (read-only, lives in **this same repo**);
->     documents `./out/`; target code **this repo**, new tree beside the legacy one.
-> 18. Other sources: **no existing tests**; one SME available for business rules.
-> 19. Quality gate: **Google Java Style Guide, enforced by google-java-format in Maven**.
-> 20. NFR priorities: **security, maintainability, performance**.
+```bash
+cp AgentInstructionSet4/INTAKE_TEMPLATE.md ./out/INTAKE.md
+```
+
+Filled-in extract (leave anything you don't know blank — it defaults and gets reported back):
+
+```markdown
+**1. Why modernize, and why now?**
+**Answer:** The .NET desktop platform is end-of-life. No hard deadline.
+
+**3. Strict parity, or are improvements allowed?**
+**Answer:** Strict — reproduce current behavior; flag bugs, don't fix them.
+
+**4. Current stack?**  ⚠️ LOAD-BEARING
+**Answer:** .NET WinForms + SQL Server (confirm from the app).
+
+**5. Target stack?**  ⚠️ LOAD-BEARING
+**Answer:** Angular (Node 25.9.0) + Java 21 / Spring Boot, Maven, Spring Data JPA.
+
+**7. Reuse the existing database, or create a new schema?**  ⚠️ LOAD-BEARING
+**Answer:** Reuse as-is — no schema changes, no migration.
+
+**9. Will the legacy application keep running against the same data store?**  ⚠️ LOAD-BEARING
+**Answer:** No — the WinForms app is retired at cutover. No concurrent writers.
+
+**11. How does the app authenticate today...?**  ⚠️ LOAD-BEARING
+**Answer:** Local users table → auth seam + dev stub, real AD deferred.
+
+**12. Cutover strategy?**  ⚠️ LOAD-BEARING
+**Answer:** Big-bang.
+
+**14. Environments & test data.**
+**Answer:** Local dev only; a restored copy of prod data is available locally.
+
+**16. Locations, and repository conventions.**
+**Answer:** Legacy source ./legacy/ (read-only, lives in this same repo);
+documents ./out/; target code this repo, new tree beside the legacy one.
+
+**19. Code style / quality gates the target must enforce?**
+**Answer:** Google Java Style Guide, enforced by google-java-format in Maven.
+```
+
+Then launch:
+
+> Follow `PROJECT_CONTEXT_INSTRUCTIONS.md`. Intake: `./out/INTAKE.md`. Legacy app: `./legacy/`.
+> App name: `EmployeeSearch`. Write `PROJECT_CONTEXT.md` and `state.json` to `./out/`.
 
 *→ You get `PROJECT_CONTEXT.md` with constraints **C1** (DB reuse), **C2** (auth seam), **C3**
 (Java style) — each carrying its own per-stage obligations, e.g. C1 → *Requirements:* capture
@@ -321,11 +355,12 @@ impact and the options (change-on-top / branch-from-a-stage / redo) and waits fo
 ### Example C — Rerunning a stage you're unhappy with
 
 **Revising your intake answers** (Stage 0 defaulted something you care about — say it assumed
-no CI/CD, but you do have a pipeline). Edit `PROJECT_CONTEXT.md §5` directly, then:
+no CI/CD, but you do have a pipeline). Edit **`INTAKE.md`** — Q15 becomes *"Respect existing:
+GitHub Actions"* — then:
 
-> Follow `PROJECT_CONTEXT_INSTRUCTIONS.md`. **Rerun.** Existing `./out/PROJECT_CONTEXT.md`
-> and `./out/state.json` — I've updated my answers in §5 (Q7 is now "respect existing:
-> GitHub Actions"). Re-derive the constraints and their obligations accordingly.
+> Follow `PROJECT_CONTEXT_INSTRUCTIONS.md`. **Rerun.** Intake: `./out/INTAKE.md` (updated).
+> Existing `./out/PROJECT_CONTEXT.md` and `./out/state.json`. Re-derive the constraints and
+> their obligations accordingly.
 
 *→ If later stages already ran, the agent logs a `changeLog` entry naming which docs are now
 stale so they get reconciled or rerun.*
@@ -350,7 +385,9 @@ After the final phase is accepted:
 
 | Artifact | Created by | You edit? | Agent edits? |
 |---|---|---|---|
-| `PROJECT_CONTEXT.md` | Stage 0 | to fix stacks/constraints/obligations (rerun) | on rerun |
+| `INTAKE_TEMPLATE.md` | the method | no — copy it | **never** |
+| `INTAKE.md` (your copy) | **you** | **yes — this is where answers live** | **never** (input only) |
+| `PROJECT_CONTEXT.md` | Stage 0 | to fix constraints/obligations (rerun) | on rerun |
 | 3 requirements docs | Stage 1 | to answer open questions | rerun / no later |
 | HLD / LLD | Stage 2 | **yes — design changes** | rerun only |
 | `PLAN_<App>.md` (phase content) | Stage 3 | future phases only | reconciliation edits |

@@ -1,3 +1,5 @@
+ 
+
 # Agent Instructions: Establish the Project Context (Stage 0)
 
 ## Role & Mission
@@ -6,10 +8,10 @@ You are a **modernization intake analyst**. Before any requirements are extracte
 design is drawn, or a line of code is written, this stage pins down the **fixed facts of
 the project** so every later stage reads them from one place instead of re-deciding them.
 
-This pipeline is **stack-agnostic**: nothing about the source or target technology is
-hardcoded anywhere in it. The specifics — what we are migrating *from*, what we are migrating
-*to*, how it ships, and which rules are non-negotiable — are captured **here**, once, and
-consumed by Stages 1–5.
+Set4 is **stack-agnostic**: unlike earlier instruction sets, nothing about the source or
+target technology is hardcoded. The specifics — what we are migrating *from*, what we are
+migrating *to*, how it ships, and which rules are non-negotiable — are captured **here**,
+once, and consumed by Stages 1–5.
 
 You produce **two artifacts**:
 
@@ -27,15 +29,17 @@ You produce **two artifacts**:
 
 ## Inputs
 
-1. **The intake questionnaire answers.** `§Intake Questionnaire` (below) is the **canonical
-   blank question list** — it is part of these shared instructions and is **never edited
-   per project**. Answers reach you one of three ways:
-   - **In the prompt** — the human lists answers by question number. Primary path on a
-     first run.
-   - **From a previous run's `PROJECT_CONTEXT.md §5`** — the resolved questionnaire from the
-     last run. **This is the input on any rerun**: the human edits their answers there and
-     relaunches. Treat it as the authoritative prior state.
+1. **The filled intake — `INTAKE.md` (primary source).** The human's copy of
+   `INTAKE_TEMPLATE.md` with the `Answer:` lines filled in; its path is given in the prompt.
+   It is the authoritative statement of what they decided.
+   - **It is an input, never an output — never write to it.** Your resolved version, with
+     provenance, goes into `PROJECT_CONTEXT.md §5`.
+   - Answers may also arrive **in the prompt**, by question number. If the prompt and
+     `INTAKE.md` disagree, the **prompt wins** — it is the more recent statement — but say so
+     in your report, because their intake file is now stale and reruns will read it again.
    - **Interactively** — you ask, for load-bearing blanks only (see Step 1).
+   - If no `INTAKE.md` is supplied, work from the prompt plus the template's defaults, and
+     tell the human that filling one in makes reruns cheaper.
 2. **The legacy application** — path in the prompt; **never assumed to be the current working
    directory or repository**, and optional (Stage 0 can run from your answers alone). It may
    sit anywhere, including inside the same repo as the target code, and need not be under
@@ -52,7 +56,9 @@ You produce **two artifacts**:
 
 ## Step 1 — Resolve the Intake Questionnaire
 
-Work through every question in §Intake Questionnaire. For each:
+Read the human's filled `INTAKE.md` (falling back to `INTAKE_TEMPLATE.md` for the question
+list and defaults if none was supplied). Work through **every** question — a question missing
+from their file is a blank, not an omission you may skip. For each:
 
 1. If the human answered it, record the answer.
 2. If blank and the question has a **default**, apply the default and mark it
@@ -69,12 +75,13 @@ provenance (human-supplied / default applied / inferred).
 **default or inference** — question number, the value you used, and the constraint or stage it
 shapes — under a heading like *"Answered without you — confirm or override."* A defaulted
 answer is a decision the human never made, and it silently propagates into constraints and
-every downstream stage. Never bury these in the document alone.
+every downstream stage. Never bury these in the document alone. Point them at their
+`INTAKE.md` as the place to correct any of them.
 
 ## Step 2 — Derive the Constraint Set
 
-Constraints are the **non-negotiable rules** every downstream stage must honor. They are
-**project-supplied**, never fixed in advance. Build the list from the questionnaire answers.
+Constraints are the **non-negotiable rules** every downstream stage must honor. In Set4
+they are **project-supplied**, not fixed. Build the list from the questionnaire answers.
 Give each a stable ID (`C1`, `C2`, …), a title, a one-line statement, its source
 (`human` decision or `derived` from the legacy app), and — crucially — its **obligations**:
 what each later stage must actually *do* to honor it.
@@ -119,10 +126,11 @@ IDs are stable; add new ones with new IDs rather than renumbering.
 
 ## Step 3 — Pin the Delivery Boundary
 
-Delivery is a project input, and its *scope must be explicit* or every stage interprets it
+Delivery is an input in Set4, but its *scope must be explicit* or every stage interprets it
 differently. Record all of the following in `PROJECT_CONTEXT.md §3`:
 
 **CI/CD**
+
 - **What exists today** — pipeline platform (GitHub Actions, GitLab CI, Azure DevOps,
   Jenkins…), and what it does (build, test, scan, deploy targets, environments).
 - **What the modernized app must do** — pick one and state it plainly:
@@ -133,6 +141,7 @@ differently. Record all of the following in `PROJECT_CONTEXT.md §3`:
   - **None yet** — no CI/CD in scope; local build/test only. (Default if unanswered.)
 
 **Cutover & coexistence** *(architecture-defining — see Q9, Q12)*
+
 - The chosen cutover strategy (big-bang / strangler fig / parallel run) and what it demands
   structurally: a routing facade for strangler fig, a reconciliation harness for a parallel
   run, neither for big-bang.
@@ -140,11 +149,13 @@ differently. Record all of the following in `PROJECT_CONTEXT.md §3`:
   does, state the concurrency expectations explicitly — this constrains every later stage.
 
 **Deployment & environments**
+
 - Deployment target (on-prem VM / container / Kubernetes / cloud / serverless / app server).
 - Environments available, and whether a data store with representative data is reachable for
   local testing. If not, note it — phases that need one will block.
 
 **Locations & repository conventions**
+
 - The **three locations**, stated separately even when they coincide: **legacy source**
   (read-only everywhere), **documents** (context/requirements/design/plan/`state.json`), and
   the **target code repository** (where Stage 4 branches, commits, and opens PRs). State
@@ -216,8 +227,11 @@ actionable downstream:
   live; every later stage reads them by ID rather than re-deriving them.
 
 ## 5. Intake Questionnaire (resolved)
-- The full questionnaire with every answer filled in. Mark defaults as
-  `ASSUMPTION: (default applied)` and inferred answers as `ASSUMPTION:`.
+- Every question with its final answer and **provenance**: human-supplied, `ASSUMPTION:
+  (default applied)`, or `ASSUMPTION:` (inferred from the legacy app).
+- Note the `INTAKE.md` this was resolved from.
+- **This is a record, not an input.** It exists so a reader can see what was decided and by
+  whom. To change an answer, the human edits `INTAKE.md` and reruns this stage.
 
 ## 6. Non-Functional / Quality Requirements (initial)
 - Performance, scalability, availability, security posture, accessibility, i18n,
@@ -298,16 +312,9 @@ Field notes (the later stages depend on these; keep them exact):
 
 - **`stages.<name>.status`** — `pending` → `in progress` → `complete`. `rerunCount`
   increments each time a stage is rerun with additional instructions.
-- **`phases[]`** — created by the Plan stage. Each: `{ "id": "P-1", "name": "...",
-  "status": "pending|in progress|done|accepted", "branchedFrom": "<phase id or null>",
-  "acceptedUtc": "<or null>", "reviewStatus": "none|pass|changes-requested",
-  "notes": "" }`.
-- **`changeLog[]`** — the loop's memory. Each: `{ "id": <int>, "utc": "...",
-  "author": "developer|implement-agent|review-agent", "origin":
-  "developer-prompt|reconcile|review-<Rid>", "summary": "...", "docsTouched":
-  ["requirements|design|plan|context"], "phasesAffected": ["P-3"] }`.
-- **`reviews[]`** — created by the Review stage. Each: `{ "id": "R-1", "target": "P-3 |
-  whole-build", "utc": "...", "result": "pass|changes-requested", "findingsCount": <int> }`.
+- **`phases[]`** — created by the Plan stage. Each: `{ "id": "P-1", "name": "...", "status": "pending|in progress|done|accepted", "branchedFrom": "<phase id or null>", "acceptedUtc": "<or null>", "reviewStatus": "none|pass|changes-requested", "notes": "" }`.
+- **`changeLog[]`** — the loop's memory. Each: `{ "id": <int>, "utc": "...", "author": "developer|implement-agent|review-agent", "origin": "developer-prompt|reconcile|review-<Rid>", "summary": "...", "docsTouched": ["requirements|design|plan|context"], "phasesAffected": ["P-3"] }`.
+- **`reviews[]`** — created by the Review stage. Each: `{ "id": "R-1", "target": "P-3 | whole-build", "utc": "...", "result": "pass|changes-requested", "findingsCount": <int> }`.
 
 Only ever **append** to `changeLog` and `reviews`; never rewrite history.
 
@@ -315,158 +322,71 @@ Only ever **append** to `changeLog` and `reviews`; never rewrite history.
 
 ## Intake Questionnaire
 
-The human answers these before Stage 0 runs (or during it). **Load-bearing (hard-stop)**
-questions block the pipeline if unanswered; others fall back to the stated default.
+**The question list lives in `INTAKE_TEMPLATE.md`**, beside these instructions — it is the
+single source for what gets asked, including each question's default and whether it is
+load-bearing. It is not duplicated here; read it if you need the full set.
 
-> **This list is the blank master copy — do not edit it per project.** It belongs to the
-> these shared instructions. Answers are supplied per the §Inputs paths and recorded, fully
-> resolved, into `PROJECT_CONTEXT.md §5` — which is where the human edits them on a rerun.
-> To change the *questions* for all future projects, edit this list; to change *answers* for
-> one project, edit that project's `PROJECT_CONTEXT.md §5`.
+The human copies that template to `INTAKE.md` in their project, fills in the `Answer:` lines,
+and gives you the path. Blanks are expected — resolve them per Step 1.
 
-**A. Drivers & Scope**
-1. **Why modernize, and why now?** — the business driver (platform/vendor end-of-life, cost,
-   scaling limits, compliance deadline, unmaintainable code, talent availability). This sets
-   the speed-vs-thoroughness tradeoff every later stage makes. *(Default: none stated —
-   assume a like-for-like modernization with no deadline pressure.)*
-2. What is explicitly **out of scope** for the modernization? *(Default: nothing — full
-   parity.)*
-3. **Strict parity, or are improvements allowed?** — must the target reproduce current
-   behavior exactly, including known bugs and awkward UX, or may it fix and improve? Name
-   anything specifically off-limits to change. *(Default: strict behavioral parity — legacy
-   bugs are reproduced and flagged as `OPEN QUESTION:`, never silently "fixed".)*
+**Load-bearing (hard-stop) questions** — no safe default exists, so the pipeline stops until
+each is answered:
 
-**B. Stacks**
-4. **Current stack?** (load-bearing) — languages/frameworks/UI/data store of the legacy
-   app. *(Inferable from the legacy app; confirm.)*
-5. **Target stack?** (load-bearing) — frontend, backend, runtime + versions, build tool,
-   data layer. *(Auth is question 10; don't duplicate it here.)*
-6. **Licensing or component constraints?** — paid legacy components needing a replacement
-   (grid controls, report engines, charting), or license restrictions on what the target may
-   use (e.g. no GPL, no commercial JDK). *(Default: none stated; flag paid legacy components
-   found during extraction as `OPEN QUESTION:`.)*
+| Q | Question | Why it can't be defaulted |
+|---|----------|---------------------------|
+| 4 | Current stack | Everything downstream reads it |
+| 5 | Target stack | Everything downstream reads it |
+| 7 | Reuse the existing database, or new schema? | Determines how the data model is captured |
+| 9 | Does the legacy app keep writing to the same data store? | A concurrent writer constrains every stage |
+| 12 | Cutover strategy | Architecture-defining; shapes design and phase slicing |
+| 11 | Current auth, and whether to keep it | Load-bearing **only where the app is access-controlled** |
 
-**C. Data & Coexistence**
-7. **Reuse the existing database, or create a new schema?** (load-bearing) — drives
-   whether the data model is captured verbatim and validated, or redesigned.
-8. If reusing: is data **migration** in scope, or connect-as-is? *(Default: connect
-   as-is, no migration.)*
-9. **Will the legacy application keep running against the same data store** during the
-   build, at cutover, or indefinitely? (load-bearing) — concurrent legacy writers are a far
-   stronger constraint than merely inheriting a schema: no schema evolution at all, shared
-   sequences/identity ranges, locking and transaction-isolation concerns, and both systems
-   must tolerate each other's writes. *(Inferable only from the human — ask.)*
-
-**D. Integrations**
-10. **External systems the target must keep working with** — queues, file drops/batch feeds,
-    SMTP, third-party or internal APIs, mainframes, schedulers, reporting/BI tools. For each,
-    note whether its **contract is fixed** (we must conform) or **negotiable**, and whether it
-    is preserved, replaced, or retired. *(Default: discover during requirements extraction;
-    assume every integration found is preserved with a fixed contract.)*
-
-**E. Auth**
-11. **How does the app authenticate today**, and should the target keep it? (load-bearing
-    if the app is access-controlled) — e.g. keep real AD/SSO, or seam + dev stub with the
-    real IdP deferred. *(Inferable; confirm.)*
-
-**F. Delivery, Cutover & Environments**
-12. **Cutover strategy?** (load-bearing) — how the target goes live:
-    - **Big-bang** — build the replacement, switch over at once.
-    - **Strangler fig** — legacy and target run side by side with traffic routed
-      incrementally; needs a facade/router and phases sliced by route/feature.
-    - **Parallel run** — both live, outputs reconciled before the switch; needs a comparison
-      harness.
-    This is architecture-defining, not a rollout detail — it shapes the design and how the
-    plan slices phases.
-13. **Deployment target?** — on-prem VM / container / Kubernetes / a specific cloud /
-    serverless / app server. Shapes configuration, secrets, health checks, and statelessness.
-    *(Default: the same deployment model the legacy app uses today.)*
-14. **Environments & test data** — which environments exist (dev/test/staging/prod), and can
-    the developer reach a database with representative (ideally anonymized) data? *(Default:
-    assume local development only; if a phase needs a real data store and none is reachable,
-    that is a blocker to report, not to work around.)*
-15. **CI/CD expectation?** — Respect existing / Generate / None. *(Default: None yet.)*
-16. **Locations, and repository conventions** — name all three explicitly; they are often, but
-    not always, the same place:
-    - **Legacy source** — where the app being modernized lives. **Read-only in every stage**,
-      whether or not it shares a repo with anything else. It need not be under version control.
-    - **Documents** — where `PROJECT_CONTEXT.md`, the requirements/design/plan docs, and
-      `state.json` are written. Keep these in git if possible: reconciliation (Stage 4 Step 0)
-      diffs them to detect what changed between runs, and degrades to change-log-only without it.
-    - **Target code repository** — where Stage 4 branches, commits, and opens PRs. **A single
-      repo holds the whole target** (frontend and backend together, e.g. as `frontend/` and
-      `backend/` trees). This is a deliberate simplification: splitting the code into separate
-      repos later is a developer decision outside this pipeline, not something any stage plans
-      for. **If this is the same repo that holds the legacy source, say so explicitly** — the
-      agent must know whether it is adding a new tree alongside a frozen legacy one, and legacy
-      files stay read-only either way.
-
-    Plus conventions: branch naming, which branch PRs target, commit message conventions,
-    required reviewers. *(Default: documents and target code both in the current working
-    repository, legacy source read-only wherever it sits; feature branches per phase; PRs
-    target the default branch.)*
-17. **Preferred phase count or slicing strategy** for the build? *(Default: agent decides,
-    3–7 phases, consistent with the cutover strategy in Q12.)*
-
-**G. Quality**
-18. **Other sources of truth besides the code** — existing automated tests, written specs,
-    runbooks, or available subject-matter experts. Legacy tests are often the best behavioral
-    specification available. *(Default: code-only extraction; note if tests exist and whether
-    they pass.)*
-19. **Code style / quality gates** the target must enforce? *(Default: idiomatic style for
-    the target stack, formatter in the build if one is standard.)*
-20. **Non-functional priorities** — rank the top 3 of {performance, security, availability,
-    accessibility, scalability, observability, maintainability, i18n}. *(Default: security,
-    maintainability, performance.)*
-21. **Performance baseline** — current measurable behavior the target must match or beat
-    (response times, batch windows, report generation, concurrent users). *(Default: none
-    supplied; the Requirements stage records any baselines observable in the legacy app, and
-    the Review stage has no numeric bar to check against — say so explicitly.)*
-22. **Compliance/regulatory** constraints — plus any audit-trail, data-retention, or
-    data-residency obligations. *(Default: none stated.)*
-
-*(Add project-specific questions here as needed. Any question the team wants to force an
-answer to should be marked load-bearing.)*
+To change the *questions* for all future projects, edit `INTAKE_TEMPLATE.md`. To change
+*answers* for one project, edit that project's `INTAKE.md` and rerun this stage.
 
 ---
 
 ## Rerunning this Stage
 
-If the human is unhappy with the context, or a decision changes early, rerun with
-**Additional Instructions** (see below) — or simply after they have **edited their answers
-in `PROJECT_CONTEXT.md §5`**, which is the normal way to revise intake. On rerun: load the
-existing `PROJECT_CONTEXT.md` (treating §5 as the current answers) and `state.json`, apply
-the changes, **increment `stages.context.rerunCount`**, and — if
-a constraint changed after later stages ran — **add a `changeLog` entry** describing the
-change and which downstream docs it invalidates, so the affected stages get rerun.
+The normal way to revise intake is: the human **edits their `INTAKE.md`** and reruns this
+stage. They may also rerun with **Additional Instructions** (see below) for changes that
+aren't questionnaire answers.
+
+On rerun: **re-read `INTAKE.md`** as the current answers (not §5 of the previous
+`PROJECT_CONTEXT.md`, which is a record of the *last* run), load the existing
+`PROJECT_CONTEXT.md` and `state.json`, apply the changes, **increment
+`stages.context.rerunCount`**, and — if a constraint changed after later stages ran — **add a
+`changeLog` entry** describing the change and which downstream docs it invalidates, so the
+affected stages get rerun. Diff the new answers against §5 of the previous run and report what
+actually changed.
 
 ---
 
 ## Definition of Done
 
 - [ ] Every load-bearing questionnaire item is answered (not defaulted); no hard-stop is
-      outstanding — current stack, target stack, DB reuse, **legacy coexistence**,
-      **cutover strategy**, and auth (where the app is access-controlled).
+  outstanding — current stack, target stack, DB reuse, **legacy coexistence**,
+  **cutover strategy**, and auth (where the app is access-controlled).
 - [ ] Current stack and target stack are stated authoritatively.
 - [ ] The CI/CD mode is one of respect / generate / none, with specifics.
 - [ ] Cutover strategy is recorded, with the structural demands it implies (routing facade /
-      reconciliation harness / none) expressed as constraint obligations where they bind.
+  reconciliation harness / none) expressed as constraint obligations where they bind.
 - [ ] Legacy coexistence is settled; if a second live writer exists, its concurrency
-      expectations are stated as a constraint.
+  expectations are stated as a constraint.
 - [ ] The constraint set is written with stable IDs, in both `PROJECT_CONTEXT.md` and
-      `state.json`.
+  `state.json`.
 - [ ] `state.json` is initialized per schema, with `phases`, `changeLog`, `reviews` empty.
 - [ ] Defaults and inferences are marked `ASSUMPTION:`; unresolved non-blockers are
-      `OPEN QUESTION:`.
+  `OPEN QUESTION:`.
 - [ ] Every defaulted/inferred answer is listed explicitly in the hand-off report for the
-      human to confirm or override — not left to be discovered in the document.
-- [ ] The blank questionnaire in this instruction file was **not** edited; §5 of
-      `PROJECT_CONTEXT.md` holds the project's answers.
+  human to confirm or override — not left to be discovered in the document.
+- [ ] Neither `INTAKE.md` nor `INTAKE_TEMPLATE.md` was written to — the intake is an input.
+  §5 of `PROJECT_CONTEXT.md` holds the resolved answers with their provenance.
 
 ---
 
 ## Additional Instructions
 
-*(The prompt may append project-specific guidance here — the legacy app path, a filled
-questionnaire, an output location, or overrides. On a rerun, put the human's change
-requests here. Treat these as overrides/additions to the above.)*
+*(The prompt may append project-specific guidance here — the path to the filled `INTAKE.md`,
+the legacy app path, an output location, answers given inline, or overrides. On a rerun, put
+the human's change requests here. Treat these as overrides/additions to the above.)*
