@@ -180,6 +180,11 @@ the context doesn't specify.
 - Do not merge on the developer's behalf unless told to — the PR is theirs to review. (Commit
   and push only when the developer's workflow calls for it.)
 
+**The target is a single repository** holding the whole application (frontend and backend
+together). One branch and one PR per unit of work — never split a phase across repos. If the
+developer later separates the code into multiple repos, that is their decision and outside
+this pipeline; do not plan or prepare for it.
+
 ---
 
 ## Hard Rules
@@ -203,7 +208,10 @@ the context doesn't specify.
    invent scope — that's the developer's / design agent's call.
 10. **No secrets in source.**
 11. **Don't touch the source app or the existing database schema.** Read-only on the legacy
-    side; non-destructive on the DB.
+    side; non-destructive on the DB. **This holds even when the legacy source shares a
+    repository with the target code** (`context.locations.sharedWithLegacy`) — you may branch
+    and commit in that repo, but legacy files are never modified, moved, or deleted, and no
+    commit of yours may touch them. Build the new tree beside it.
 12. **Never self-authorize a large redo or branch.** Recommend; let the developer decide.
 
 ---

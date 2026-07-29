@@ -47,6 +47,9 @@ what's wrong, why it matters, and the requirement/design/constraint it violates.
   the implementer made on its own — a silently fixed legacy bug, a redesigned screen flow —
   is a **finding**, not a bonus. Where improvements are permitted, check they were recorded.
 - Verify **fixed integration contracts** (`PROJECT_CONTEXT §8`) are conformed to exactly.
+- Check **frontend/backend agreement**: every endpoint the frontend calls exists in the backend
+  with the shape the LLD specifies. Such a mismatch is a **Blocker** — it is invisible to each
+  side's own unit tests.
 - Confirm the phase's own **exit criteria** genuinely hold (don't take the `done` mark on faith).
 
 ### 2. Unit / automated tests

@@ -58,7 +58,9 @@ the pipeline; **respect** → keep every phase buildable/testable by the existin
 
 1. **Every phase ends runnable and testable** by hand — an API via its explorer, a screen in
    the browser, a job that runs. Never end a phase on "code exists but nothing can be tried".
-   Backend-only or stubbed-frontend phases are fine if the test guide says so.
+   Backend-only or stubbed-frontend phases are fine if the test guide says so. Once both
+   frontend and backend exist, "runnable" means they run **together** — the test guide must
+   say how to start each part (ports, order, env), not assume one `run` command exists.
 2. **Phase 1 is deliberately small** — the smallest thing that proves the riskiest plumbing
    (typically: scaffold + data-store connection + entity validation + one or two endpoints).
    Everything else waits.
@@ -255,6 +257,8 @@ ones. Increment `stages.plan.rerunCount` and add a `changeLog` entry noting the 
       phasing and confirmed by a phase's exit criteria; CI/CD handled per the context mode.
 - [ ] The phase strategy is consistent with the **cutover strategy** — routing facade early
       for strangler fig, reconciliation harness early for a parallel run.
+- [ ] Once both frontend and backend exist, each phase's test guide explains how to start them
+      together (ports, order, env).
 - [ ] Where the legacy app stays a live writer, data-touching phases are planned and tested
       for concurrent access.
 - [ ] **Exit criteria are mechanical/falsifiable** for every phase (the agent gate has teeth).

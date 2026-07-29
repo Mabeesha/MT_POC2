@@ -36,7 +36,11 @@ You produce **two artifacts**:
      last run. **This is the input on any rerun**: the human edits their answers there and
      relaunches. Treat it as the authoritative prior state.
    - **Interactively** — you ask, for load-bearing blanks only (see Step 1).
-2. **The legacy application** (path in the prompt), if available — you may inspect it to
+2. **The legacy application** — path in the prompt; **never assumed to be the current working
+   directory or repository**, and optional (Stage 0 can run from your answers alone). It may
+   sit anywhere, including inside the same repo as the target code, and need not be under
+   version control. Treat it as **read-only** in this and every later stage. If available,
+   you may inspect it to
    *confirm or infer* answers the human left blank (e.g. detect the current stack, detect
    whether it authenticates against AD, detect the database). Inference here is allowed
    **only to propose a default the human can override** — mark every inferred answer
@@ -140,9 +144,17 @@ differently. Record all of the following in `PROJECT_CONTEXT.md §3`:
 - Environments available, and whether a data store with representative data is reachable for
   local testing. If not, note it — phases that need one will block.
 
-**Repository conventions**
-- Repo location, branch naming, PR target branch, commit conventions, required reviewers.
-  Stage 4 mandates branch + small commits + PR; this is where it learns the house rules.
+**Locations & repository conventions**
+- The **three locations**, stated separately even when they coincide: **legacy source**
+  (read-only everywhere), **documents** (context/requirements/design/plan/`state.json`), and
+  the **target code repository** (where Stage 4 branches, commits, and opens PRs). State
+  explicitly if the target repo is the same one holding the legacy source — the agent must
+  know whether it is adding a new tree beside a frozen legacy one.
+- **The target is always a single repository** — frontend and backend live together in it.
+  Splitting them later is the developer's call and outside this pipeline's scope; no stage
+  plans for a multi-repo target.
+- Branch naming, PR target branch, commit conventions, required reviewers. Stage 4 mandates
+  branch + small commits + PR; this is where it learns the house rules.
 
 ## Step 4 — Write the Artifacts
 
@@ -182,7 +194,9 @@ stages' documents).
 - **Deployment target:** where the target runs.
 - **Environments & test data:** what exists, and whether a representative data store is
   reachable for local testing.
-- **Repository conventions:** repo, branch naming, PR target, commit conventions, reviewers.
+- **Locations:** legacy source (read-only) / documents / target code repository — stated
+  separately, noting explicitly where any of them are the same place.
+- **Repository conventions:** branch naming, PR target, commit conventions, reviewers.
 
 ## 4. Constraints (non-negotiable)
 For each constraint, one block — the table row plus the per-stage obligations that make it
@@ -256,6 +270,12 @@ empty:
     "cutover": { "strategy": "big-bang | strangler | parallel-run", "notes": "" },
     "legacyCoexistence": { "sharedDataStore": true, "duration": "build | cutover | indefinite | none" },
     "deploymentTarget": "<short string>",
+    "locations": {
+      "legacySource": "<path — read-only>",
+      "documents": "<path>",
+      "targetRepo": "<path — single repo holding the whole target>",
+      "sharedWithLegacy": false
+    },
     "repo": { "branchNaming": "", "prTarget": "", "conventions": "" },
     "constraints": [
       { "id": "C1", "title": "", "statement": "", "source": "human | derived",
@@ -366,9 +386,25 @@ questions block the pipeline if unanswered; others fall back to the stated defau
     assume local development only; if a phase needs a real data store and none is reachable,
     that is a blocker to report, not to work around.)*
 15. **CI/CD expectation?** — Respect existing / Generate / None. *(Default: None yet.)*
-16. **Repository, branch & PR conventions** — where the code lives, branch naming, which
-    branch PRs target, commit message conventions, required reviewers. *(Default: the current
-    repository; feature branches per phase; PRs target the default branch.)*
+16. **Locations, and repository conventions** — name all three explicitly; they are often, but
+    not always, the same place:
+    - **Legacy source** — where the app being modernized lives. **Read-only in every stage**,
+      whether or not it shares a repo with anything else. It need not be under version control.
+    - **Documents** — where `PROJECT_CONTEXT.md`, the requirements/design/plan docs, and
+      `state.json` are written. Keep these in git if possible: reconciliation (Stage 4 Step 0)
+      diffs them to detect what changed between runs, and degrades to change-log-only without it.
+    - **Target code repository** — where Stage 4 branches, commits, and opens PRs. **A single
+      repo holds the whole target** (frontend and backend together, e.g. as `frontend/` and
+      `backend/` trees). This is a deliberate simplification: splitting the code into separate
+      repos later is a developer decision outside this pipeline, not something any stage plans
+      for. **If this is the same repo that holds the legacy source, say so explicitly** — the
+      agent must know whether it is adding a new tree alongside a frozen legacy one, and legacy
+      files stay read-only either way.
+
+    Plus conventions: branch naming, which branch PRs target, commit message conventions,
+    required reviewers. *(Default: documents and target code both in the current working
+    repository, legacy source read-only wherever it sits; feature branches per phase; PRs
+    target the default branch.)*
 17. **Preferred phase count or slicing strategy** for the build? *(Default: agent decides,
     3–7 phases, consistent with the cutover strategy in Q12.)*
 

@@ -61,6 +61,11 @@ as a first-class design problem, not an operational footnote.
 **Integrations** with a **fixed** contract (`PROJECT_CONTEXT §8`) are binding: the target
 conforms exactly. Specify each in the LLD as precisely as an internal API.
 
+**The target lives in a single repository** (frontend and backend together). Design for that:
+they build, version, and ship as one unit, so the internal API between them needs no
+cross-version compatibility story. Note in HLD §9 how the parts are built and run together
+locally.
+
 ---
 
 ## Hard Rules

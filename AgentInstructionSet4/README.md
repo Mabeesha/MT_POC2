@@ -229,7 +229,19 @@ output — logs a `changeLog` entry so the downstream work gets reconciled or re
 ## Worked Examples
 
 The examples below show the **prompts** you'd give the agent at each step. Replace bracketed
-values. Assume everything lives under `./out/` and the legacy app under `./legacy/`.
+values.
+
+**Three locations, named separately.** Nothing is assumed to be "the current repo" — tell the
+agent each one, even when they're the same place:
+
+| | Example A uses | Access |
+|---|---|---|
+| **Legacy source** | `./legacy/` | **read-only in every stage** — never modified, even if it shares your repo |
+| **Documents** | `./out/` | context, requirements, design, plan, `state.json`. Keep in git — Stage 4 diffs these to detect changes between runs |
+| **Target code repo** | this repo | where Stage 4 branches, commits, opens PRs |
+
+If the legacy source sits inside the repo you're building in (common for a POC), **say so** —
+the agent then adds the new tree alongside it and still refuses to touch legacy files.
 
 ### Example A — A .NET → Angular + Spring Boot migration that reuses the database
 
@@ -248,6 +260,8 @@ values. Assume everything lives under `./out/` and the legacy app under `./legac
 > 12. Cutover: **big-bang**.
 > 14. Environments: local dev only; a **restored copy of prod data** is available locally.
 > 15. CI/CD: **none yet** (local build/test only).
+> 16. Locations: legacy source `./legacy/` (read-only, lives in **this same repo**);
+>     documents `./out/`; target code **this repo**, new tree beside the legacy one.
 > 18. Other sources: **no existing tests**; one SME available for business rules.
 > 19. Quality gate: **Google Java Style Guide, enforced by google-java-format in Maven**.
 > 20. NFR priorities: **security, maintainability, performance**.
