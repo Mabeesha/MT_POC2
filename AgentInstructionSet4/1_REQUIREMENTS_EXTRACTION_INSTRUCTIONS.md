@@ -143,10 +143,12 @@ Use the structures below. Keep IDs stable and cross-reference across the three.
    ### 2.3 Data Model                 (depth per the applicable constraints' obligations)
    ### 2.6 Security & Access Mechanics
 ## 3. Integrations & External Systems
-   (Every external system found; reconcile with `PROJECT_CONTEXT §8` and **add rows for any
-   not listed there** — note direction, contract shape, and whether the contract is fixed.
-   An integration discovered here that the context didn't know about is a scope change:
-   raise it as an `OPEN QUESTION:`.)
+   (Every external system found, **recorded here** — direction, contract shape, and whether
+   the contract is fixed. Cross-check against `PROJECT_CONTEXT §8`, but **do not write to
+   that file**: Stage 0 owns it. An integration you find that the context didn't list is a
+   scope change — record it here and raise it as an `OPEN QUESTION:` so the human can fold it
+   into the context on a Stage 0 rerun. This document is the complete inventory; §8 is only
+   what was known up front.)
 ## 4. Authentication & Security       (state which auth path per PROJECT_CONTEXT)
 ## 5. Background Processing / Jobs
 ## 6. Configuration
@@ -162,9 +164,11 @@ Use the structures below. Keep IDs stable and cross-reference across the three.
 category, state the requirement and cite what in the legacy app implies it:
 
 - **Performance** — response times, throughput, batch windows, data volumes observed. Record
-  any **measurable baseline** you can establish from the legacy app (timeouts configured,
-  page sizes, batch schedules, observed table sizes) into `PROJECT_CONTEXT §10` — without one,
-  the Review stage has no numeric bar and "no slower than today" is unenforceable.
+  any **measurable baseline** you can establish from the legacy app (timeouts configured, page
+  sizes, batch schedules, observed table sizes) **here, in §7 of this document** — not in
+  `PROJECT_CONTEXT`, which Stage 0 owns. `PROJECT_CONTEXT §10` holds only the baseline the
+  human supplied; anything *you* discover belongs here, and the Review stage reads both.
+  Without a baseline from either source, "no slower than today" is unenforceable — say so.
 - **Scalability** — concurrency, expected growth, statefulness.
 - **Availability / reliability** — uptime expectations, failover, retries, idempotency.
 - **Security** — authn/authz strength, encryption, secrets, auditing, input handling.

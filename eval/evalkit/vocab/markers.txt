@@ -1,0 +1,3 @@
+# Notation markers the sets require verbatim (check D1).
+ASSUMPTION:
+OPEN QUESTION:

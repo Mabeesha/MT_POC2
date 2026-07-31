@@ -1,0 +1,24 @@
+# Controlled status/enum vocabulary for state.json and stage prose (check D1).
+# One canonical term per line. Variants that normalize to the same form
+# (case, hyphen/underscore/space) but differ literally are reported.
+pending
+in progress
+done
+accepted
+complete
+none
+pass
+changes-requested
+big-bang
+strangler
+parallel-run
+respect
+generate
+human
+derived
+developer
+implement-agent
+review-agent
+developer-prompt
+reconcile
+out-of-band

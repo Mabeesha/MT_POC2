@@ -94,10 +94,16 @@ read and append to it. You rarely edit it by hand (accepting a phase is the main
 - `context` — stacks, CI/CD mode, and the **constraints** (by ID, e.g. `C1`, `C2`).
 - `stages` — status + `rerunCount` for context/requirements/design/plan.
 - `phases[]` — each phase's `status` (`pending`/`in progress`/`done`/`accepted`),
-  `reviewStatus`, and `branchedFrom` (lineage).
+  `reviewStatus`, `branchedFrom` (lineage), plus the `branch` and `prUrl` of its work.
+- `edits[]` — post-phase edits (`E-1`, `E-2`…). An edit ships code, so it gets an id, a
+  status, and a branch/PR of its own — and can be reviewed independently, like a phase.
 - `changeLog[]` — **append-only** record of every mid-flight change (developer notes,
-  reconciliations, review findings). This is what the Implement stage reconciles against.
-- `reviews[]` — one entry per Review run, with its verdict.
+  reconciliations, review findings, out-of-band edits). This is what the Implement stage
+  reconciles against.
+- `reviews[]` — one entry per Review run, with its verdict and `blockerCount`.
+- `progress` — the **high-water mark** (`lastProcessedChangeLogId`, `lastProcessedReviewId`)
+  that tells the next Implement run which entries it has already folded in. Without it, every
+  run would re-apply the whole change log.
 
 Keep it in git. Its history is how the Implement stage detects what changed between runs.
 
@@ -191,10 +197,14 @@ descriptive body, marks the phase `done`, and **stops**. It never sets `accepted
 and never rolls into the next phase.
 
 ### Stage 5 — Review / QA  · `5_REVIEW_INSTRUCTIONS.md`
-An **independent** agent audits a phase (or the whole build) on four axes — requirements
-coverage, tests, security, static performance — plus constraint compliance. It returns
-**PASS** or **CHANGES REQUESTED**; actionable findings become `changeLog[]` entries the next
-Implement run fixes. It changes no code.
+An **independent** agent audits a phase, a post-phase edit (`E-1`), or the whole build on four
+axes — requirements coverage, tests, security, static performance — plus constraint compliance.
+It returns **PASS** or **CHANGES REQUESTED**; actionable findings become `changeLog[]` entries
+the next Implement run fixes. It changes no code.
+
+**Blockers gate, Majors don't.** A Blocker finding stops the next phase from starting until
+it's fixed — building on a known-broken foundation is what the loop exists to prevent. Majors
+ride along and get fixed during the next run's reconciliation.
 
 ---
 
@@ -216,16 +226,22 @@ phase N+1 while phase N is merely `done`**.
 
 1. **Test it** — follow the phase's Developer test guide in `PLAN_<App>.md`.
 2. **Decide:**
-   - **A. Good, no changes** → set the phase `accepted` in `state.json`. Optionally run
-     **Review** on it. Launch the next phase.
+   - **A. Good, no changes** → **accept it, in three steps that all matter:**
+     1. **Merge the phase's PR.** The next phase branches off your default branch — if this
+        PR isn't merged, the next run either stops (it checks) or builds on a base missing
+        this phase's work.
+     2. Set the phase `accepted` in `state.json`, **and set `acceptedUtc`** to the current
+        UTC timestamp. The agent never writes either field.
+     3. Optionally run **Review** on it, then launch the next phase.
    - **B. Works, but you want a change** → this is a **post-phase edit**. Either edit the
      owning doc yourself (LLD for contracts, HLD for architecture, plan for sequencing) and add
      a `changeLog` note, or just describe the change in the next run's prompt and tell the agent
      **"this is a post-phase edit"**. The agent runs the **contradiction check**: if it's
      additive it does it on top; if it's a requirement/design change it presents options and
      **waits for your call** on anything large.
-   - **C. Fails your testing** → set the phase back to `pending` with a note, and re-run the
-     agent **on the same phase** with the failure details.
+   - **C. Fails your testing** → set the phase back to `pending` with a note, leave its PR
+     **open and unmerged**, and re-run the agent **on the same phase** with the failure
+     details. It reuses that same branch and PR rather than opening a second one.
 3. **Repeat** until the final phase is `accepted` (and, if you want, whole-build Review is PASS).
 
 **Big course-corrections:** if your feedback amounts to "the design is wrong", don't funnel it
@@ -446,13 +462,15 @@ After the final phase is accepted:
 | `AGENTS.md` (your copy) | you, from the template | tune it for your project | **never** |
 | `0_INTAKE_TEMPLATE.md` | the method | no — copy it | **never** |
 | `INTAKE.md` (your copy) | **you** | **yes — this is where answers live** | **never** (input only) |
-| `PROJECT_CONTEXT.md` | Stage 0 | to fix constraints/obligations (rerun) | on rerun |
-| 3 requirements docs | Stage 1 | to answer open questions | rerun / no later |
-| HLD / LLD | Stage 2 | **yes — design changes** | rerun only |
-| `PLAN_<App>.md` (phase content) | Stage 3 | future phases only | reconciliation edits |
-| `state.json` phases[] status | Stage 3 (init) | `accepted` / reopen | `in progress`/`done` |
-| `state.json` changeLog[] | Stage 0 (init) | **yes — your change notes** | reconciliations + review findings |
+| `PROJECT_CONTEXT.md` | Stage 0 | to fix constraints/obligations (rerun) | Stage 0 only — no other stage writes here |
+| 3 requirements docs | Stage 1 | to answer open questions | Stage 1 rerun; Stage 4 for **small, unambiguous** edits its contradiction check authorizes |
+| HLD / LLD | Stage 2 | **yes — design changes** | Stage 2 rerun; Stage 4 for **small, unambiguous** edits its contradiction check authorizes |
+| `PLAN_<App>.md` (phase content) | Stage 3 | future phases only | reconciliation edits, statuses, stale test-guide fixes |
+| `state.json` phases[] | Stage 3 (init) | `accepted` + `acceptedUtc` / reopen | `in progress`/`done`, `branch`, `prUrl` |
+| `state.json` edits[] | Stage 4 | `accepted` after testing | appends each post-phase edit |
+| `state.json` changeLog[] | Stage 0 (init) | **yes — your change notes** | reconciliations + review findings (append-only) |
 | `state.json` reviews[] | Review stage | no | Review appends |
+| `state.json` progress | Stage 0 (init) | no | Stage 4 advances the high-water mark |
 | Application code | Stage 4 | hotfixes → log them | yes (on a branch, via PR) |
 | Review reports | Stage 5 | no | yes |
 

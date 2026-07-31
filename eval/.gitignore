@@ -1,0 +1,8 @@
+.venv/
+.cache/
+results/
+__pycache__/
+*.pyc
+
+# uv.lock is deliberately NOT ignored — it is committed so `uv sync --frozen`
+# in CI resolves to the same dependency versions the checks were validated against.

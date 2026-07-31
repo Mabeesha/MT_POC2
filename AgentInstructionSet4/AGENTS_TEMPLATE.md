@@ -24,6 +24,12 @@ gate belongs in front of the edit, not in front of the question.
   Name the stage that owns it and offer to rerun that stage. These documents are the contract
   that later stages are judged against; editing them casually breaks that contract.
 
+  **Carve-out:** this does not apply when you are executing a stage that owns those edits.
+  Stage 4 is required to update the plan (reconciliation tasks, statuses, stale test-guide
+  steps) and may make small, clearly-bounded requirements/design edits its own contradiction
+  check authorizes; Stages 0–3 and 5 write the documents they own. The rule above governs
+  **ad-hoc requests outside a stage run** — that is where casual edits do the damage.
+
 **If they choose "directly", still append a `changeLog[]` entry** in `state.json` (author:
 `developer`, origin: `out-of-band`) naming what changed. Skipping the process is their call;
 skipping the record is not — the next Implement run reconciles against this log, and an

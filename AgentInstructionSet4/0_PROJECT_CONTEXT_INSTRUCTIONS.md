@@ -1,5 +1,3 @@
- 
-
 # Agent Instructions: Establish the Project Context (Stage 0)
 
 ## Role & Mission
@@ -8,7 +6,7 @@ You are a **modernization intake analyst**. Before any requirements are extracte
 design is drawn, or a line of code is written, this stage pins down the **fixed facts of
 the project** so every later stage reads them from one place instead of re-deciding them.
 
-Set4 is **stack-agnostic**: unlike earlier instruction sets, nothing about the source or
+This pipeline is **stack-agnostic**: nothing about the source or
 target technology is hardcoded. The specifics — what we are migrating *from*, what we are
 migrating *to*, how it ships, and which rules are non-negotiable — are captured **here**,
 once, and consumed by Stages 1–5.
@@ -80,8 +78,8 @@ every downstream stage. Never bury these in the document alone. Point them at th
 
 ## Step 2 — Derive the Constraint Set
 
-Constraints are the **non-negotiable rules** every downstream stage must honor. In Set4
-they are **project-supplied**, not fixed. Build the list from the questionnaire answers.
+Constraints are the **non-negotiable rules** every downstream stage must honor. They are
+**project-supplied**, never fixed in advance. Build the list from the questionnaire answers.
 Give each a stable ID (`C1`, `C2`, …), a title, a one-line statement, its source
 (`human` decision or `derived` from the legacy app), and — crucially — its **obligations**:
 what each later stage must actually *do* to honor it.
@@ -92,6 +90,10 @@ what each later stage must actually *do* to honor it.
 > "requirements must capture the data model verbatim"), that instruction must live **in the
 > constraint's obligations**, not in the stage file. A constraint with no obligation stated
 > for a stage simply doesn't affect that stage.
+>
+> **Marking "no obligation":** an empty string (`""`) or an omitted key means *this constraint
+> does not affect that stage* — it is a deliberate "nothing to do", never an unmet obligation.
+> Agents must not treat it as a gap to fill or a task to invent.
 
 Common constraint *archetypes* to consider (include only those that apply — a green-field
 target may have none of these; a DB-reuse migration will have the first):
@@ -126,7 +128,7 @@ IDs are stable; add new ones with new IDs rather than renumbering.
 
 ## Step 3 — Pin the Delivery Boundary
 
-Delivery is an input in Set4, but its *scope must be explicit* or every stage interprets it
+Delivery is a project input, and its *scope must be explicit* or every stage interprets it
 differently. Record all of the following in `PROJECT_CONTEXT.md §3`:
 
 **CI/CD**
@@ -246,7 +248,9 @@ actionable downstream:
 | System | Direction | Contract | Disposition |
 |--------|-----------|----------|-------------|
 | …      | in/out/both | **fixed** / negotiable | preserve / replace / retire |
-- As known now (Q10); the Requirements stage discovers the rest and adds rows. A **fixed**
+- **What was known up front** (Q10) only. The Requirements stage inventories the rest in its
+  Technical document and raises anything new as an `OPEN QUESTION:` — it does not write here.
+  This file is owned by Stage 0; fold discoveries in by rerunning this stage. A **fixed**
   contract means the target conforms exactly — it is effectively a constraint.
 
 ## 9. Other Sources of Truth
@@ -254,8 +258,10 @@ actionable downstream:
   Requirements stage should use these alongside the code, not just the code.
 
 ## 10. Performance Baseline
-- Measurable current behavior the target must match or beat (Q21), or an explicit statement
-  that no baseline was supplied — so the Review stage knows it has no numeric bar.
+- Measurable current behavior the target must match or beat, **as supplied by the human**
+  (Q21), or an explicit statement that none was supplied. Baselines *observed* in the legacy
+  app are recorded by the Requirements stage in its Technical document instead; Review reads
+  both, and reports plainly when neither exists.
 ```
 
 *(Sections 8–10 are appended rather than inserted so that §4 Constraints and §5 Questionnaire
@@ -303,8 +309,10 @@ empty:
     "plan":         { "status": "pending",  "rerunCount": 0 }
   },
   "phases": [],
+  "edits": [],
   "changeLog": [],
-  "reviews": []
+  "reviews": [],
+  "progress": { "lastProcessedChangeLogId": 0, "lastProcessedReviewId": null }
 }
 ```
 
@@ -312,11 +320,25 @@ Field notes (the later stages depend on these; keep them exact):
 
 - **`stages.<name>.status`** — `pending` → `in progress` → `complete`. `rerunCount`
   increments each time a stage is rerun with additional instructions.
-- **`phases[]`** — created by the Plan stage. Each: `{ "id": "P-1", "name": "...", "status": "pending|in progress|done|accepted", "branchedFrom": "<phase id or null>", "acceptedUtc": "<or null>", "reviewStatus": "none|pass|changes-requested", "notes": "" }`.
-- **`changeLog[]`** — the loop's memory. Each: `{ "id": <int>, "utc": "...", "author": "developer|implement-agent|review-agent", "origin": "developer-prompt|reconcile|review-<Rid>", "summary": "...", "docsTouched": ["requirements|design|plan|context"], "phasesAffected": ["P-3"] }`.
-- **`reviews[]`** — created by the Review stage. Each: `{ "id": "R-1", "target": "P-3 | whole-build", "utc": "...", "result": "pass|changes-requested", "findingsCount": <int> }`.
+- **`phases[]`** — created by the Plan stage. Each: `{ "id": "P-1", "name": "...", "status": "pending|in progress|done|accepted", "branchedFrom": "<phase id or null>", "branch": "<or null>", "prUrl": "<or null>", "acceptedUtc": "<or null>", "reviewStatus": "none|pass|changes-requested", "notes": "" }`.
+  - `branch` / `prUrl` are written by the Implement stage so the work is findable later.
+  - `status: "accepted"` and `acceptedUtc` are written **only by the developer**.
+- **`edits[]`** — post-phase edits, created by the Implement stage. Each: `{ "id": "E-1", "utc": "...", "summary": "...", "afterPhase": "P-2", "status": "done|accepted", "branch": "<or null>", "prUrl": "<or null>", "reviewStatus": "none|pass|changes-requested" }`.
+  An edit is a **reviewable unit in its own right** — it ships code, so it can be a Review
+  target exactly like a phase.
+- **`changeLog[]`** — the loop's memory. Each: `{ "id": <int>, "utc": "...", "author": "developer|implement-agent|review-agent", "origin": "developer-prompt|reconcile|review-<Rid>|out-of-band", "summary": "...", "docsTouched": ["requirements|design|plan|context"], "phasesAffected": ["P-3"], "editsAffected": ["E-1"] }`.
+- **`reviews[]`** — created by the Review stage. Each: `{ "id": "R-1", "target": "P-3 | E-1 | whole-build", "utc": "...", "result": "pass|changes-requested", "blockerCount": <int>, "findingsCount": <int> }`.
+- **`progress`** — the reconciliation **high-water mark**, written by the Implement stage at
+  every hand-off. `lastProcessedChangeLogId` is the highest `changeLog[].id` that run folded
+  in; `lastProcessedReviewId` is the last `reviews[].id` it addressed (`null` if none yet).
+  Without these, each run cannot tell new entries from ones it already applied.
 
-Only ever **append** to `changeLog` and `reviews`; never rewrite history.
+**Allocating ids:** `changeLog[].id` is `max(existing ids) + 1`, starting at `1`. `reviews[].id`
+is `R-<n>` and `edits[].id` is `E-<n>`, each using the next unused `n` for its own array. Ids
+are never reused, even if an entry is superseded.
+
+Only ever **append** to `changeLog`, `reviews`, and `edits`; never rewrite history. Correct a
+mistaken entry by appending a new one that supersedes it.
 
 ---
 
@@ -338,8 +360,8 @@ each is answered:
 | 5 | Target stack | Everything downstream reads it |
 | 7 | Reuse the existing database, or new schema? | Determines how the data model is captured |
 | 9 | Does the legacy app keep writing to the same data store? | A concurrent writer constrains every stage |
-| 12 | Cutover strategy | Architecture-defining; shapes design and phase slicing |
 | 11 | Current auth, and whether to keep it | Load-bearing **only where the app is access-controlled** |
+| 12 | Cutover strategy | Architecture-defining; shapes design and phase slicing |
 
 To change the *questions* for all future projects, edit `0_INTAKE_TEMPLATE.md`. To change
 *answers* for one project, edit that project's `INTAKE.md` and rerun this stage.

@@ -8,7 +8,7 @@ against what the project *asked for*, and report findings the developer can act 
 this as a **separate agent/run** from the one that built the code.
 
 You can be pointed at **one accepted phase** (the common case, run after the developer accepts
-a phase) or at the **whole build** (a milestone or final review). You **do not fix anything** —
+a phase), a **post-phase edit** (`E-1`), or the **whole build** (a milestone or final review). You **do not fix anything** —
 you find, classify, and hand back a verdict. Fixes go through the Implement stage.
 
 > **Golden rule: verify against the source of truth, don't re-litigate it.** The requirements,
@@ -28,7 +28,9 @@ you find, classify, and hand back a verdict. Fixes go through the Implement stag
 4. **`PROJECT_CONTEXT.md`** — constraints (by ID), target stack, NFRs, CI/CD mode.
 5. **`PLAN_<AppName>.md`** — the phase(s) in scope and their exit criteria.
 6. **The implemented codebase** — what you actually audit. Run its build and tests.
-7. **The review target** — from the prompt: a phase ID (`P-3`) or `whole-build`.
+7. **The review target** — from the prompt: a phase ID (`P-3`), a post-phase edit id (`E-1`),
+   or `whole-build`. Edits ship code just as phases do, so they are reviewable in their own
+   right; review one when the developer asks, or when an edit was large enough to warrant it.
 
 ---
 
@@ -71,8 +73,9 @@ what's wrong, why it matters, and the requirement/design/constraint it violates.
   obvious algorithmic hot spots, resources not closed. Tie findings to the NFRs in
   `PROJECT_CONTEXT §6` / the Technical requirements where relevant.
 - Do **not** run benchmarks or load tests; reason from the code.
-- Compare against the **performance baseline** in `PROJECT_CONTEXT §10` where one exists. If
-  none was supplied, say so plainly in the report — a performance section with no baseline is
+- Compare against the **performance baseline** — `PROJECT_CONTEXT §10` (human-supplied) and
+  §7 of the Technical requirements document (observed during extraction). If neither exists,
+  say so plainly in the report — a performance section with no baseline is
   an opinion, and the reader should know that.
 - Where the legacy app remains a **live writer** to the same data store, check the code
   actually tolerates concurrent access (transaction scope, optimistic locking, identity/
@@ -113,7 +116,17 @@ context mode.
   faithfully built a wrong design), say so explicitly and recommend rerunning the **Design**
   stage rather than patching in Implement.
 
-Set the reviewed phase's `reviewStatus` in `state.json` to `pass` or `changes-requested`.
+**Blockers gate; Majors ride along.** Record `blockerCount` accurately, because the two
+severities have different consequences:
+
+- **Any Blocker ≥ 1** — the next phase **must not start** until it is resolved. Say so
+  explicitly in your report: building the next phase on a known-broken foundation is exactly
+  what this loop exists to prevent.
+- **Majors with no Blockers** — the next phase may proceed; the findings ride along and get
+  fixed during that run's reconciliation. Stalling a sound build over non-critical findings
+  costs more than it saves.
+
+Set the reviewed target's `reviewStatus` in `state.json` to `pass` or `changes-requested`.
 
 ---
 
@@ -121,16 +134,27 @@ Set the reviewed phase's `reviewStatus` in `state.json` to `pass` or `changes-re
 
 ### 1. Append to `state.json reviews[]`
 ```json
-{ "id": "R-<n>", "target": "P-3 | whole-build", "utc": "<ISO-8601>",
-  "result": "pass | changes-requested", "findingsCount": <int> }
+{ "id": "R-<n>", "target": "P-3 | E-1 | whole-build", "utc": "<ISO-8601>",
+  "result": "pass | changes-requested", "blockerCount": <int>, "findingsCount": <int> }
 ```
-Set the target phase's `reviewStatus` accordingly. For **each Blocker/Major** finding, also
-append a `changeLog[]` entry: `{ "author": "review-agent", "origin": "review-R-<n>",
-"summary": "<finding + fix direction>", "docsTouched": [], "phasesAffected": ["P-3"] }` so the
-Implement stage will pick it up on its next run.
+Use the next unused `R-<n>`; ids are never reused. Set the target's `reviewStatus` (on its
+`phases[]` or `edits[]` entry) to `pass` or `changes-requested`.
+
+For **each Blocker/Major** finding, also append a `changeLog[]` entry — **complete, with every
+field the schema requires**:
+```json
+{ "id": <max existing changeLog id + 1>, "utc": "<ISO-8601>", "author": "review-agent",
+  "origin": "review-R-<n>", "summary": "<finding + fix direction>", "docsTouched": [],
+  "phasesAffected": ["P-3"], "editsAffected": [] }
+```
+Allocate `id` as one greater than the highest currently in `changeLog[]`. These entries are how
+the Implement stage picks the findings up on its next run — an entry missing `id` or `utc`
+breaks its high-water-mark reconciliation.
 
 ### 2. Write the review report
-A Markdown report (`REVIEW_<AppName>_<target>_<date>.md`, or as the prompt directs):
+A Markdown report named **`REVIEW_<Rid>_<AppName>_<target>.md`** (e.g.
+`REVIEW_R-2_EmployeeSearch_P-3.md`), or as the prompt directs. Leading with the review id keeps
+filenames unique and ordered — two reviews of the same target never collide:
 ```markdown
 # Review: <AppName> — <target> — <date>
 ## Verdict: PASS | CHANGES REQUESTED
@@ -183,6 +207,7 @@ those. You only append to `state.json` and write the report.
 
 ## Additional Instructions
 
-*(The prompt may append run-specific guidance — the review target (phase ID or whole-build),
+*(The prompt may append run-specific guidance — the review target (phase id, edit id, or
+whole-build),
 file paths for state/plan/design/requirements/context, the codebase location, an area to weight
 more heavily, or the report output location. Treat these as overrides/additions to the above.)*
