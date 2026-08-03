@@ -33,6 +33,15 @@ stop.** Then the developer tests, the Review stage may audit, and the next run b
    merely `done`). If the predecessor is only `done`, the developer hasn't tested it — report
    and stop rather than racing ahead.
 
+   **Route them back; don't offer a shortcut.** Do not ask "shall I mark it accepted?" as part
+   of a request to start the next phase — that turns a testing attestation into a reflexive
+   yes. Say instead:
+   > "P-2 is `done` but not accepted — I can't start P-3 until it is. If you tested it and it
+   > passed, say *accept P-2* and I'll merge the PR, record it, and start P-3."
+
+   When they do say it, record the acceptance yourself (see §Recording Developer Decisions) —
+   they should never have to hand-edit `state.json`.
+
    **Blockers gate the next phase.** If the predecessor's most recent review has
    `result: "changes-requested"` with `blockerCount > 0` and those findings are not yet fixed,
    do **not** start the next phase — fix the Blockers first (as reconciliation on the current
@@ -161,8 +170,9 @@ test guide where the change surface warrants.
 2. **Walk the developer test guide yourself** end to end; if a step is now wrong, fix it in the
    plan (don't leave it stale).
 3. **Update `state.json`:**
-   - Set the phase `status: "done"` — never `accepted`, and never set `acceptedUtc`; both are
-     the developer's to write after testing.
+   - Set the phase `status: "done"` — **not** `accepted`. That mark requires the developer to
+     have tested it and to say so explicitly; you write it only on that instruction (see
+     §Recording Developer Decisions), never at hand-off.
    - Record the `branch` and `prUrl` on the phase (or on the `edits[]` entry, for an edit).
    - **Advance the high-water mark**: set `progress.lastProcessedChangeLogId` to the highest
      `changeLog[].id` now present, and `progress.lastProcessedReviewId` to the last review you
@@ -235,6 +245,27 @@ accepting it — but verify rather than assume:
 
 Record the branch you created and the PR you opened in the phase's `state.json` entry
 (`branch`, `prUrl`) so the next run and the developer can find them later.
+
+### Recording Developer Decisions
+
+The developer never hand-edits `state.json`. They tell you what happened; you write it and
+confirm. This is bookkeeping on their instruction — not authority you hold yourself.
+
+| They say | You write |
+|---|---|
+| "accept P-2" / "P-2 passed testing" | merge its PR (unless reviewers/CI are required — then say the merge is theirs), set `status: "accepted"` and `acceptedUtc` |
+| "P-2 failed — <symptom>" | `status: "pending"` plus the failure note; leave the branch and PR open for the re-run |
+| "accept E-1" | the same, on the `edits[]` entry |
+| "I changed X by hand" | a `changeLog[]` entry, `author: developer`, `origin: out-of-band` |
+
+**Acceptance is guarded**, because it is the mark certifying that a human tested the increment:
+
+1. It must be **its own instruction naming the item** — never inferred, and never bundled into a
+   request to do something else.
+2. **Never accept several at once.** Batch acceptance means nothing was individually tested;
+   challenge it and take them one at a time.
+3. **State what they are attesting to** when you record it — "recording that you tested P-2
+   against its test guide and it passed" — so they register the claim.
 
 ### Re-running a Phase That Failed Testing
 

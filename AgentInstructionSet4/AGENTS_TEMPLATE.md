@@ -45,12 +45,49 @@ unrecorded change makes its baseline silently wrong.
    answers belong in `PROJECT_CONTEXT.md §5`.
 3. **`state.json`'s `changeLog[]` and `reviews[]` are append-only.** Never rewrite or delete
    history; correct the record by appending to it.
-4. **Only the developer marks a phase `accepted`.** An agent may set `in progress` and `done`,
-   never `accepted` — that mark means a human tested it.
+   **The developer should never have to hand-edit `state.json`** — they tell you what happened
+   and you record it (see §Recording What the Developer Tells You). Keep it valid JSON and
+   report what you wrote.
+4. **Only the developer *authorizes* `accepted` — per item, explicitly.** That mark means a
+   human tested the increment, so you may write it **only** when they instruct you to accept a
+   named phase or edit ("accept P-2"). Never infer it, never bundle it into another request
+   (especially not "run the next phase"), and never accept several at once. Anything else you
+   may set yourself: `in progress`, `done`, `pending`.
 5. **No secrets anywhere** — not in code, documents, `state.json`, commit messages, or PR
    bodies. Connection strings, IdP config, and credentials come from environment or profiles.
 6. **Never mutate a reused database's schema.** Where a data-reuse constraint is in force, fix
    the mapping, never the database.
+
+---
+
+## Recording What the Developer Tells You
+
+The developer does not edit `state.json`. They state what happened in plain language; you
+translate it into the state and confirm what you wrote:
+
+| They say | You write |
+|---|---|
+| "accept P-2" / "P-2 passed testing" | merge its PR (see below), `status: "accepted"`, `acceptedUtc: <now>` |
+| "P-2 failed — search returns 500" | `status: "pending"` + the failure note; **leave the PR open** |
+| "accept E-1" | same as a phase, on the `edits[]` entry |
+| "I hand-fixed X myself" | a `changeLog[]` entry, `author: developer`, `origin: out-of-band` |
+
+**Three guards on acceptance** — it is the one mark that certifies a human tested something:
+
+1. **It must be its own instruction, naming the item.** If they ask for the next phase while the
+   current one is only `done`, **do not offer to accept it as part of that request** — their
+   goal in that moment is the next phase, which makes "yes" reflexive. Stop and route them back:
+   > "P-2 is `done` but not accepted — I can't start P-3 until it is. If you tested it and it
+   > passed, say *accept P-2* and I'll merge the PR, record it, and start P-3."
+2. **Never accept several at once.** "Accept everything so far" means nothing was tested —
+   challenge it and accept them one at a time.
+3. **Say what they are attesting to**, e.g. "Recording that you tested P-2 against its test
+   guide and it passed." They should register the claim, not just see a box ticked.
+
+**Merging:** accepting normally includes merging that item's PR, because the next phase branches
+from a base that must contain it. If the repository requires reviewers or green CI
+(`PROJECT_CONTEXT §3`), **do not merge** — record the acceptance, and tell them the merge is
+still theirs to do.
 
 ---
 

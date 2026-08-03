@@ -322,7 +322,8 @@ Field notes (the later stages depend on these; keep them exact):
   increments each time a stage is rerun with additional instructions.
 - **`phases[]`** — created by the Plan stage. Each: `{ "id": "P-1", "name": "...", "status": "pending|in progress|done|accepted", "branchedFrom": "<phase id or null>", "branch": "<or null>", "prUrl": "<or null>", "acceptedUtc": "<or null>", "reviewStatus": "none|pass|changes-requested", "notes": "" }`.
   - `branch` / `prUrl` are written by the Implement stage so the work is findable later.
-  - `status: "accepted"` and `acceptedUtc` are written **only by the developer**.
+  - `status: "accepted"` and `acceptedUtc` are written **only on the developer's explicit
+    per-phase instruction** ("accept P-2"); an agent records them then, never on its own.
 - **`edits[]`** — post-phase edits, created by the Implement stage. Each: `{ "id": "E-1", "utc": "...", "summary": "...", "afterPhase": "P-2", "status": "done|accepted", "branch": "<or null>", "prUrl": "<or null>", "reviewStatus": "none|pass|changes-requested" }`.
   An edit is a **reviewable unit in its own right** — it ships code, so it can be a Review
   target exactly like a phase.

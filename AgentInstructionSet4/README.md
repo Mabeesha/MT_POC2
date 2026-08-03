@@ -89,7 +89,8 @@ output — see §Reruns.
 
 The single source of truth for **progress, lineage, and change history**. The Markdown docs
 hold human-readable *content*; `state.json` holds *state*. Stage 0 initializes it; later stages
-read and append to it. You rarely edit it by hand (accepting a phase is the main exception).
+read and append to it. **You never edit it by hand** — you tell the agent what happened
+("accept P-2", "P-2 failed") and it records the change and confirms.
 
 - `context` — stacks, CI/CD mode, and the **constraints** (by ID, e.g. `C1`, `C2`).
 - `stages` — status + `rerunCount` for context/requirements/design/plan.
@@ -219,29 +220,40 @@ ride along and get fixed during the next run's reconciliation.
 | `done` | built and self-verified against **mechanical exit criteria** | agent |
 | `accepted` | **you** tested it and approved | **you only** |
 
-Two rules keep the loop safe: **only you write `accepted`**, and the agent **refuses to start
-phase N+1 while phase N is merely `done`**.
+Two rules keep the loop safe: **only you authorize `accepted`**, and the agent **refuses to
+start phase N+1 while phase N is merely `done`**.
+
+**You never hand-edit `state.json`.** You say what happened and the agent records it:
+
+| You say | It writes |
+|---|---|
+| "accept P-2" | merges the PR, sets `accepted` + `acceptedUtc` |
+| "P-2 failed — search returns 500" | `pending` + your note, PR left open |
+| "accept E-1" | the same, for a post-phase edit |
+| "I hand-fixed the connection string" | a `changeLog` entry marked `out-of-band` |
+
+Acceptance is the one thing it won't do loosely: it must be **its own instruction naming the
+phase**. Ask to start P-3 while P-2 is only `done` and it will stop and point you back rather
+than offering to accept P-2 for you — because at that moment your goal is P-3, and a reflexive
+"yes" is exactly how untested work slips through. It also won't accept several phases at once.
 
 **When a phase lands on your desk (`done`):**
 
 1. **Test it** — follow the phase's Developer test guide in `PLAN_<App>.md`.
 2. **Decide:**
-   - **A. Good, no changes** → **accept it, in three steps that all matter:**
-     1. **Merge the phase's PR.** The next phase branches off your default branch — if this
-        PR isn't merged, the next run either stops (it checks) or builds on a base missing
-        this phase's work.
-     2. Set the phase `accepted` in `state.json`, **and set `acceptedUtc`** to the current
-        UTC timestamp. The agent never writes either field.
-     3. Optionally run **Review** on it, then launch the next phase.
+   - **A. Good, no changes** → just say **"accept P-2"**. The agent merges the PR, sets
+     `accepted` + `acceptedUtc`, and confirms what it recorded — you never touch `state.json`.
+     (If your repo needs reviewers or green CI, it records the acceptance and leaves the merge
+     to you.) Then optionally run **Review**, and launch the next phase.
    - **B. Works, but you want a change** → this is a **post-phase edit**. Either edit the
      owning doc yourself (LLD for contracts, HLD for architecture, plan for sequencing) and add
      a `changeLog` note, or just describe the change in the next run's prompt and tell the agent
      **"this is a post-phase edit"**. The agent runs the **contradiction check**: if it's
      additive it does it on top; if it's a requirement/design change it presents options and
      **waits for your call** on anything large.
-   - **C. Fails your testing** → set the phase back to `pending` with a note, leave its PR
-     **open and unmerged**, and re-run the agent **on the same phase** with the failure
-     details. It reuses that same branch and PR rather than opening a second one.
+   - **C. Fails your testing** → say so — **"P-2 failed, search returns 500"**. The agent
+     reopens it to `pending` with your note and leaves the PR open. Re-run it on the same
+     phase; it reuses that branch and PR rather than opening a second one.
 3. **Repeat** until the final phase is `accepted` (and, if you want, whole-build Review is PASS).
 
 **Big course-corrections:** if your feedback amounts to "the design is wrong", don't funnel it
@@ -404,7 +416,11 @@ a missing obligation is a rule that silently won't be enforced.*
 > repo; branch and open a PR.
 
 *→ Agent builds P-1 on a branch, marks it `done`, opens a PR. You test it via the plan's P-1
-test guide, then set P-1 `accepted` in `state.json`.*
+test guide, then simply say:*
+
+> accept P-1
+
+*→ It merges the PR, records `accepted` + `acceptedUtc`, and confirms — no JSON editing.*
 
 **Stage 5 — Review P-1** (independent run):
 
@@ -466,9 +482,9 @@ After the final phase is accepted:
 | 3 requirements docs | Stage 1 | to answer open questions | Stage 1 rerun; Stage 4 for **small, unambiguous** edits its contradiction check authorizes |
 | HLD / LLD | Stage 2 | **yes — design changes** | Stage 2 rerun; Stage 4 for **small, unambiguous** edits its contradiction check authorizes |
 | `PLAN_<App>.md` (phase content) | Stage 3 | future phases only | reconciliation edits, statuses, stale test-guide fixes |
-| `state.json` phases[] | Stage 3 (init) | `accepted` + `acceptedUtc` / reopen | `in progress`/`done`, `branch`, `prUrl` |
-| `state.json` edits[] | Stage 4 | `accepted` after testing | appends each post-phase edit |
-| `state.json` changeLog[] | Stage 0 (init) | **yes — your change notes** | reconciliations + review findings (append-only) |
+| `state.json` phases[] | Stage 3 (init) | **no hand-editing** — you authorize, it writes | all fields, incl. `accepted` on your explicit instruction |
+| `state.json` edits[] | Stage 4 | **no hand-editing** — say "accept E-1" | appends each edit; `accepted` on your instruction |
+| `state.json` changeLog[] | Stage 0 (init) | tell it what you changed | your notes, reconciliations, review findings (append-only) |
 | `state.json` reviews[] | Review stage | no | Review appends |
 | `state.json` progress | Stage 0 (init) | no | Stage 4 advances the high-water mark |
 | Application code | Stage 4 | hotfixes → log them | yes (on a branch, via PR) |
