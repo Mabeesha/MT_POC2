@@ -119,9 +119,10 @@ context mode.
 **Blockers gate; Majors ride along.** Record `blockerCount` accurately, because the two
 severities have different consequences:
 
-- **Any Blocker ≥ 1** — the next phase **must not start** until it is resolved. Say so
-  explicitly in your report: building the next phase on a known-broken foundation is exactly
-  what this loop exists to prevent.
+- **Any Blocker ≥ 1** — the next phase **must not start** until it is resolved, whether this
+  review targeted a phase, an edit, or the whole build. Say so explicitly in your report:
+  building the next phase on a known-broken foundation is exactly what this loop exists to
+  prevent. The gate clears only when the Implement stage marks the target `remediated`.
 - **Majors with no Blockers** — the next phase may proceed; the findings ride along and get
   fixed during that run's reconciliation. Stalling a sound build over non-critical findings
   costs more than it saves.
@@ -139,6 +140,11 @@ Set the reviewed target's `reviewStatus` in `state.json` to `pass` or `changes-r
 ```
 Use the next unused `R-<n>`; ids are never reused. Set the target's `reviewStatus` (on its
 `phases[]` or `edits[]` entry) to `pass` or `changes-requested`.
+
+**On a re-review after remediation:** a target sitting at `reviewStatus: "remediated"` means
+the Implement stage fixed a previous review's Blockers. Verify those fixes specifically, then
+set `pass` or `changes-requested` as normal — `remediated` is a claim awaiting your
+confirmation, never a verdict in itself.
 
 For **each Blocker/Major** finding, also append a `changeLog[]` entry — **complete, with every
 field the schema requires**:

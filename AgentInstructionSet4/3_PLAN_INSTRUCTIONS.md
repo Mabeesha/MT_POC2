@@ -149,7 +149,8 @@ build-out; (final) completion & hardening + non-functional verification.
 
 Produce the document per the template below, decomposing each phase into right-sized,
 dependency-ordered tasks. **Then write the phase list into `state.json` `phases[]`** — one
-entry per phase, all `status: "pending"`, `branchedFrom: null`, `reviewStatus: "none"`. The
+entry per phase, all `status: "pending"`, `branchedFrom: null`, `branch: null`,
+`prUrl: null`, `acceptedUtc: null`, `reviewStatus: "none"`. The
 plan document holds the *content*; `state.json` holds the *status and lineage*.
 
 ---
@@ -263,7 +264,8 @@ ones. Increment `stages.plan.rerunCount` and add a `changeLog` entry noting the 
       for concurrent access.
 - [ ] **Exit criteria are mechanical/falsifiable** for every phase (the agent gate has teeth).
 - [ ] Each task has scope, acceptance criteria, and a verification step.
-- [ ] `state.json phases[]` is populated (all `pending`, `branchedFrom: null`).
+- [ ] `state.json phases[]` is populated, every field initialized per the schema (all
+      `pending`; `branchedFrom`, `branch`, `prUrl`, `acceptedUtc` null; `reviewStatus: "none"`).
 - [ ] Risks and open questions listed, not silently resolved.
 - [ ] `stages.plan.status` set to `complete`.
 - [ ] A coding agent could execute any single phase from the plan + design docs alone.

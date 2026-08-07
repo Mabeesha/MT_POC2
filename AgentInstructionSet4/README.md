@@ -101,10 +101,12 @@ read and append to it. **You never edit it by hand** — you tell the agent what
 - `changeLog[]` — **append-only** record of every mid-flight change (developer notes,
   reconciliations, review findings, out-of-band edits). This is what the Implement stage
   reconciles against.
-- `reviews[]` — one entry per Review run, with its verdict and `blockerCount`.
-- `progress` — the **high-water mark** (`lastProcessedChangeLogId`, `lastProcessedReviewId`)
-  that tells the next Implement run which entries it has already folded in. Without it, every
-  run would re-apply the whole change log.
+- `reviews[]` — one entry per Review run, with its verdict and `blockerCount`. A target's
+  `reviewStatus` goes `changes-requested` → `remediated` once Implement fixes the Blockers;
+  until then the next phase is gated.
+- `progress` — the **high-water mark** (`lastProcessedChangeLogId`,
+  `lastProcessedReviewNumber`, both integers) telling the next Implement run which entries it
+  has already folded in. Without it, every run would re-apply the whole change log.
 
 Keep it in git. Its history is how the Implement stage detects what changed between runs.
 
@@ -203,9 +205,11 @@ axes — requirements coverage, tests, security, static performance — plus con
 It returns **PASS** or **CHANGES REQUESTED**; actionable findings become `changeLog[]` entries
 the next Implement run fixes. It changes no code.
 
-**Blockers gate, Majors don't.** A Blocker finding stops the next phase from starting until
-it's fixed — building on a known-broken foundation is what the loop exists to prevent. Majors
-ride along and get fixed during the next run's reconciliation.
+**Blockers gate, Majors don't.** A Blocker stops the next phase from starting — building on a
+known-broken foundation is what the loop exists to prevent — no matter whether it was found on a
+phase, an edit, or a whole-build review. The gate clears when Implement fixes them and marks the
+target `remediated`; a re-review then confirms. Majors ride along into the next run's
+reconciliation.
 
 ---
 
@@ -475,7 +479,7 @@ After the final phase is accepted:
 
 | Artifact | Created by | You edit? | Agent edits? |
 |---|---|---|---|
-| `AGENTS.md` (your copy) | you, from the template | tune it for your project | **never** |
+| `AGENTS.md` (your copy) | you, from the template | **add** project specifics only — never remove the invariants or the recording protocol | **never** |
 | `0_INTAKE_TEMPLATE.md` | the method | no — copy it | **never** |
 | `INTAKE.md` (your copy) | **you** | **yes — this is where answers live** | **never** (input only) |
 | `PROJECT_CONTEXT.md` | Stage 0 | to fix constraints/obligations (rerun) | Stage 0 only — no other stage writes here |

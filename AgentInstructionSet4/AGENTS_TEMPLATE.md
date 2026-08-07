@@ -51,8 +51,10 @@ unrecorded change makes its baseline silently wrong.
 4. **Only the developer *authorizes* `accepted` — per item, explicitly.** That mark means a
    human tested the increment, so you may write it **only** when they instruct you to accept a
    named phase or edit ("accept P-2"). Never infer it, never bundle it into another request
-   (especially not "run the next phase"), and never accept several at once. Anything else you
-   may set yourself: `in progress`, `done`, `pending`.
+   (especially not "run the next phase"), and never accept several at once.
+   You may set `in progress` and `done` yourself as work proceeds. Set **`pending` only when
+   the developer reports a failure** — reopening an accepted item otherwise would discard a
+   human's attestation that they tested it.
 5. **No secrets anywhere** — not in code, documents, `state.json`, commit messages, or PR
    bodies. Connection strings, IdP config, and credentials come from environment or profiles.
 6. **Never mutate a reused database's schema.** Where a data-reuse constraint is in force, fix
@@ -62,15 +64,23 @@ unrecorded change makes its baseline silently wrong.
 
 ## Recording What the Developer Tells You
 
+**This section is normative and lives only here.** Acceptance often happens in ordinary chat,
+where no stage file is loaded — so the protocol belongs in the file that always loads. The
+stage instructions point back at this section rather than restating it.
+
 The developer does not edit `state.json`. They state what happened in plain language; you
 translate it into the state and confirm what you wrote:
 
 | They say | You write |
 |---|---|
 | "accept P-2" / "P-2 passed testing" | merge its PR (see below), `status: "accepted"`, `acceptedUtc: <now>` |
-| "P-2 failed — search returns 500" | `status: "pending"` + the failure note; **leave the PR open** |
+| "P-2 failed — search returns 500" | `status: "pending"` + the failure note; **leave the branch and PR open** for the re-run |
 | "accept E-1" | same as a phase, on the `edits[]` entry |
+| "E-1 failed — <symptom>" | same as a failed phase, on the `edits[]` entry |
 | "I hand-fixed X myself" | a `changeLog[]` entry, `author: developer`, `origin: out-of-band` |
+
+Phases and edits behave **identically** here: both are units of shipped work with a status, a
+branch, a PR, and a review status. Anything you can do to a phase you can do to an edit.
 
 **Three guards on acceptance** — it is the one mark that certifies a human tested something:
 

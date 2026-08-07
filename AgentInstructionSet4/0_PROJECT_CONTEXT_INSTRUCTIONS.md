@@ -312,7 +312,7 @@ empty:
   "edits": [],
   "changeLog": [],
   "reviews": [],
-  "progress": { "lastProcessedChangeLogId": 0, "lastProcessedReviewId": null }
+  "progress": { "lastProcessedChangeLogId": 0, "lastProcessedReviewNumber": 0 }
 }
 ```
 
@@ -320,19 +320,27 @@ Field notes (the later stages depend on these; keep them exact):
 
 - **`stages.<name>.status`** — `pending` → `in progress` → `complete`. `rerunCount`
   increments each time a stage is rerun with additional instructions.
-- **`phases[]`** — created by the Plan stage. Each: `{ "id": "P-1", "name": "...", "status": "pending|in progress|done|accepted", "branchedFrom": "<phase id or null>", "branch": "<or null>", "prUrl": "<or null>", "acceptedUtc": "<or null>", "reviewStatus": "none|pass|changes-requested", "notes": "" }`.
+- **`phases[]`** — created by the Plan stage. Each: `{ "id": "P-1", "name": "...", "status": "pending|in progress|done|accepted", "branchedFrom": "<phase id or null>", "branch": "<or null>", "prUrl": "<or null>", "acceptedUtc": "<or null>", "reviewStatus": "none|pass|changes-requested|remediated", "notes": "" }`.
   - `branch` / `prUrl` are written by the Implement stage so the work is findable later.
+  - `reviewStatus` moves `changes-requested` → **`remediated`** when the Implement stage has
+    fixed that review's findings. Nothing else clears it, and the Blocker gate reads it — so a
+    review left at `changes-requested` blocks the next phase indefinitely, by design. A
+    re-review after remediation is what returns it to `pass`.
   - `status: "accepted"` and `acceptedUtc` are written **only on the developer's explicit
     per-phase instruction** ("accept P-2"); an agent records them then, never on its own.
-- **`edits[]`** — post-phase edits, created by the Implement stage. Each: `{ "id": "E-1", "utc": "...", "summary": "...", "afterPhase": "P-2", "status": "done|accepted", "branch": "<or null>", "prUrl": "<or null>", "reviewStatus": "none|pass|changes-requested" }`.
+- **`edits[]`** — post-phase edits, created by the Implement stage. Each: `{ "id": "E-1", "utc": "...", "summary": "...", "afterPhase": "P-2", "status": "pending|in progress|done|accepted", "branch": "<or null>", "prUrl": "<or null>", "acceptedUtc": "<or null>", "reviewStatus": "none|pass|changes-requested|remediated" }`.
   An edit is a **reviewable unit in its own right** — it ships code, so it can be a Review
   target exactly like a phase.
 - **`changeLog[]`** — the loop's memory. Each: `{ "id": <int>, "utc": "...", "author": "developer|implement-agent|review-agent", "origin": "developer-prompt|reconcile|review-<Rid>|out-of-band", "summary": "...", "docsTouched": ["requirements|design|plan|context"], "phasesAffected": ["P-3"], "editsAffected": ["E-1"] }`.
 - **`reviews[]`** — created by the Review stage. Each: `{ "id": "R-1", "target": "P-3 | E-1 | whole-build", "utc": "...", "result": "pass|changes-requested", "blockerCount": <int>, "findingsCount": <int> }`.
 - **`progress`** — the reconciliation **high-water mark**, written by the Implement stage at
-  every hand-off. `lastProcessedChangeLogId` is the highest `changeLog[].id` that run folded
-  in; `lastProcessedReviewId` is the last `reviews[].id` it addressed (`null` if none yet).
-  Without these, each run cannot tell new entries from ones it already applied.
+  every hand-off. Both are **integers**, compared numerically:
+  - `lastProcessedChangeLogId` — the highest `changeLog[].id` that run actually folded in.
+  - `lastProcessedReviewNumber` — the `<n>` of the last `R-<n>` it addressed (`0` if none).
+    It is stored as a **number, not the `R-<n>` string**, because string comparison puts
+    `R-10` before `R-2`.
+
+  Without these, a run cannot tell new entries from ones it already applied.
 
 **Allocating ids:** `changeLog[].id` is `max(existing ids) + 1`, starting at `1`. `reviews[].id`
 is `R-<n>` and `edits[].id` is `E-<n>`, each using the next unused `n` for its own array. Ids
