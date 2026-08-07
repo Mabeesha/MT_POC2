@@ -1,12 +1,3 @@
-# AGENTS.md — Template
-
-**Copy this file to the root of your project repository as `AGENTS.md`.** It is loaded into
-every agent session automatically, so it carries only the rules that apply to *every* request —
-including plain chat that never invokes a stage. Keep it short; stage-specific process lives in
-the numbered instruction files.
-
----
-
 ## Before you write anything
 
 Classify what you are about to do **at the moment you are about to write** — not when you read

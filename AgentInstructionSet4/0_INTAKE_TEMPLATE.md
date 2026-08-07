@@ -1,27 +1,3 @@
-# Modernization Intake Questionnaire — TEMPLATE
-
-**How to use this file**
-
-1. **Copy it into your project** as `INTAKE.md` (next to where your documents will live).
-   Don't edit this template — it's shared across projects.
-2. **Fill in the `Answer:` lines.** Leave any you don't know blank.
-3. **Pass the filled copy's path to the Project Context stage.** It resolves your answers,
-   applies the stated defaults for blanks, and stops to ask you about unanswered
-   **load-bearing** questions.
-
-**Blanks are fine and expected** — every non-load-bearing question has a default, and the
-agent reports back everything it answered on your behalf so you can confirm or override.
-
-> **This file is the input; `PROJECT_CONTEXT.md §5` is the resolved record.** The agent writes
-> your answers there along with what it defaulted or inferred. **To change an answer later,
-> edit this file and rerun the Project Context stage** — don't edit §5, which is a record, not
-> an input.
-
-**Six questions are load-bearing** — the pipeline stops until they're answered, because no
-default is safe: **Q4, Q5, Q7, Q9, Q12**, and **Q11** where the app is access-controlled.
-
----
-
 ## A. Drivers & Scope
 
 **1. Why modernize, and why now?**

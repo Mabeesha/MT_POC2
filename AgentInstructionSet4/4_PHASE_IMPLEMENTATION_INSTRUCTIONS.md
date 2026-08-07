@@ -178,7 +178,16 @@ test guide where the change surface warrants.
    mark `done` if they do.
 2. **Walk the developer test guide yourself** end to end; if a step is now wrong, fix it in the
    plan (don't leave it stale).
-3. **Update `state.json`:**
+3. **Write the phase's standalone test document.** Produce a small, self-contained
+   `HOW_TO_TEST_<phaseId>.md` in the documents location (e.g. `HOW_TO_TEST_P-3.md`) so the
+   developer can test this increment **without opening the plan**. Derive it from the plan's
+   developer test guide — which stays the source of truth — and keep the two consistent
+   (regenerate this file whenever reconciliation changes the guide). It contains: the phase's
+   goal and **what is now testable**; prerequisites and the **exact commands to build and run
+   the app**; **numbered test steps**, each pairing an action with its expected result; and a
+   closing note telling the developer to report the failing step by number if something doesn't
+   match (which feeds a `P-N failed — <symptom>` reopen). Keep it short.
+4. **Update `state.json`:**
    - Set the phase `status: "done"` — **not** `accepted`. That mark requires the developer to
      have tested it and to say so explicitly; you write it only on that instruction (see
      §Recording Developer Decisions), never at hand-off.
@@ -189,18 +198,20 @@ test guide where the change surface warrants.
      **not** simply take the highest id present: an entry a developer added mid-run that you
      never folded in would be marked processed and silently lost.
    - Ensure any task/guide edits are saved to the plan.
-4. **Open a Pull Request for the branch** (see §Git Discipline) with a descriptive body.
-5. **Report to the developer:**
+5. **Open a Pull Request for the branch** (see §Git Discipline) with a descriptive body.
+6. **Report to the developer:**
    - What was reconciled in Step 0 (or "no changes"); the classification (phase vs. edit).
    - What was built, task by task (brief), and how it was verified.
-   - The runnable state: exact commands to start, and a pointer to the test guide.
+   - The runnable state: exact commands to start, and a pointer to the phase's
+     `HOW_TO_TEST_<phaseId>.md`.
    - The PR link. Deviations, follow-ups, `OPEN QUESTION:`s and `ASSUMPTION:`s.
    - The next phase's ID and one-line goal (what accepting this unlocks), and a suggestion to
      run the **Review stage** if appropriate.
-6. **Stop.** Do not begin the next phase.
+7. **Stop.** Do not begin the next phase.
 
 *(For a post-phase edit, the shape is the same minus phase-status transitions: branch, make the
-change with tests/docs/state updated, verify, open a PR, report, stop.)*
+change with tests/docs/state updated, verify, open a PR, report, stop. If the edit changes how
+the affected phase is tested, update that phase's `HOW_TO_TEST_<phaseId>.md` too.)*
 
 **Register every post-phase edit in `state.json edits[]`.** An edit ships code — it deserves an
 id, a status, and a reviewable identity, not just a change-log line. Append
@@ -226,8 +237,8 @@ the context doesn't specify.
 - **Commit small, examinable steps** — ideally one commit per task, each message stating what
   changed and why, so history can be read later. Don't squash a whole phase into one commit.
 - **Update, in the same branch:** the **tests** (new/changed behavior is covered), the
-  **documentation** (READMEs, the plan's test guide, any doc the change affects), and
-  **`state.json`** (statuses, change log).
+  **documentation** (READMEs, the plan's test guide, the phase's **`HOW_TO_TEST_<phaseId>.md`**,
+  any doc the change affects), and **`state.json`** (statuses, change log).
 - **Open a PR** for the branch with a **descriptive body** that captures the history:
   1. **Initial task** — what was asked (the phase goal or the edit request).
   2. **Reasoning** — key decisions, and any reconciliation/contradiction handling done.
@@ -350,6 +361,8 @@ items as `OPEN QUESTION:` and assumptions as `ASSUMPTION:`.
       escalated to the developer with the three options, not self-absorbed.
 - [ ] Every task completed and verified, or explicitly reported as blocked.
 - [ ] App is in the promised runnable state; the developer test guide was walked and is accurate.
+- [ ] A standalone `HOW_TO_TEST_<phaseId>.md` was written/updated for the phase — consistent with
+      the plan's developer test guide, with setup, exact run commands, and numbered steps.
 - [ ] Previous phases' testable behavior still works (explicit replacements aside).
 - [ ] Every constraint's *Implement* obligation (per `PROJECT_CONTEXT §4`) holds in the
       running app; no secrets in source.
