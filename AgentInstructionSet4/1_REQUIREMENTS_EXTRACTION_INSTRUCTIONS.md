@@ -53,6 +53,24 @@ belongs, cross-reference by ID — never duplicate prose.
 
 ---
 
+## Locating your inputs
+
+You need not be handed every path. Resolve inputs in this order, and **never guess** — if a
+required input is **missing or ambiguous** (no match, or two candidates), stop and ask:
+
+1. **`state.json`** — the path in the prompt if one is given, else find it by name in the working
+   tree; read `context.locations` from it.
+2. **The document inputs listed in §Inputs** — resolve from `context.locations.documents` by their
+   conventional filenames (`PROJECT_CONTEXT.md` and the `<AppName>`-suffixed
+   requirements/design/plan docs this stage consumes).
+3. **The legacy source and target code repository**, where this stage needs them — from
+   `context.locations.legacySource` and `context.locations.targetRepo`.
+
+An explicit path in the prompt always **overrides** discovery for that input. Write the documents
+this stage produces to `context.locations.documents`; code goes to `context.locations.targetRepo`.
+
+---
+
 ## Constraint-Driven Extraction
 
 The constraints are project-specific and defined in `PROJECT_CONTEXT.md §4`, each with its
